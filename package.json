@@ -1,5 +1,5 @@
 {
-  "name": "node-binance-api",
+  "name": "binance-bot",
   "version": "0.9.7",
   "description": "Binance API for node https://github.com/jaggedsoft/node-binance-api",
   "main": "node-binance-api.js",
