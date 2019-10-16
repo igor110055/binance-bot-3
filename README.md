@@ -1638,17 +1638,3 @@ binance.useServerTime(function() {
 	});
 });
 ```
-
-Thank you to all contributors: bmino, dmzoneill, dmitriz, keith1024, pavlovdog, usama33, yanislk, learnathoner, vaielab, nickreese, Tuitio, grandmore, itnok, CollinEstes, sethyx, mstijak, MadDeveloper, balthazar, bitoiu, matthewwoop, robaleman, hems and others!
-
-> # ⚠️ Binance no longer offers support for API projects.
-> ## No support is offered. No questions will be answered. Pull requests are still welcome.
-
-
-## Stargazers over time
-
-[![Stargazers over time](https://starcharts.herokuapp.com/jaggedsoft/node-binance-api.svg)](https://starcharts.herokuapp.com/jaggedsoft/node-binance-api)
-
-[![Views](http://hits.dwyl.io/jaggedsoft/node-binance-api.svg)](http://hits.dwyl.io/jaggedsoft/node-binance-api)
-[![jaggedsoft on Twitter](https://img.shields.io/twitter/follow/jaggedsoft.svg?style=social)](https://twitter.com/jaggedsoft)
-[![Chartaholic on Twitter](https://img.shields.io/twitter/follow/Chartaholic.svg?style=social)](https://twitter.com/Chartaholic)
