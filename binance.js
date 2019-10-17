@@ -1,6 +1,7 @@
 const express = require('express');
 const BinanceBot = require('./binbot.js');
 require('dotenv').config();
+require('log-timestamp');
 
 const app =express();
 app.use(express.json());
