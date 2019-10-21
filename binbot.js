@@ -22,9 +22,13 @@ global.lastOrder = {};
 global.orders = {};
 global.symbolInfo = {};
 global.filters ={};
+global.usdtProfit={};
+global.totalUsdtProfit =0;
 global.compare ={};
+global.statistics = {};
 for(let pair of usePairs){
-    global.compare[pair]= 0
+    global.compare[pair]= 0;
+    global.statistics[pair] ={};
 }
 
 /* 24hr change
@@ -87,21 +91,21 @@ setInterval(() => {
                                 let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/current, stepSize));
                                 if(execQuantity < global.filters[obj.symbol].minQty) execQuantity = global.filters[obj.symbol].minQty;
                                 /* Market sell buy */
-                                binance.marketBuy(obj.symbol, execQuantity, (error, response) => {
-                                    if(error) {return console.error(error)};
-                                    let fillable = {};
-                                    fillable.apiKey = process.env.API_KEY;
-                                    fillable.symbol = response.symbol;
-                                    fillable.orderId = response.orderId;
-                                    fillable.origQty = parseFloat(response.origQty);
-                                    fillable.executedQty = parseFloat(response.executedQty);
-                                    fillable.cummulativeQuoteQty = parseFloat(response.cummulativeQuoteQty);
-                                    fillable.side = response.side;
-                                    fillable.price = parseFloat(response.cummulativeQuoteQty)/parseFloat(response.origQty);
-                                    fillable.transactTime = moment.utc(response.transactTime).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');;
-                                    global.orderFilled[obj.symbol] = fillable;
-                                    console.log(global.orderFilled[obj.symbol]);
-                                });
+                                // binance.marketBuy(obj.symbol, execQuantity, (error, response) => {
+                                //     if(error) {return console.error(error)};
+                                //     let fillable = {};
+                                //     fillable.apiKey = process.env.API_KEY;
+                                //     fillable.symbol = response.symbol;
+                                //     fillable.orderId = response.orderId;
+                                //     fillable.origQty = parseFloat(response.origQty);
+                                //     fillable.executedQty = parseFloat(response.executedQty);
+                                //     fillable.cummulativeQuoteQty = parseFloat(response.cummulativeQuoteQty);
+                                //     fillable.side = response.side;
+                                //     fillable.price = parseFloat(response.cummulativeQuoteQty)/parseFloat(response.origQty);
+                                //     fillable.transactTime = moment.utc(response.transactTime).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');;
+                                //     global.orderFilled[obj.symbol] = fillable;
+                                //     console.log(global.orderFilled[obj.symbol]);
+                                // });
                             }
                         }
                     } 
@@ -121,21 +125,21 @@ setInterval(() => {
                                 let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/current, stepSize));
                                 if(execQuantity < global.filters[obj.symbol].minQty) execQuantity = global.filters[obj.symbol].minQty;
                                 /* Market sell buy */
-                                binance.marketBuy(obj.symbol, execQuantity, (error, response) => {
-                                    if(error) {return console.error(error)};
-                                    let fillable = {};
-                                    fillable.apiKey = process.env.API_KEY;
-                                    fillable.symbol = response.symbol;
-                                    fillable.orderId = response.orderId;
-                                    fillable.origQty = parseFloat(response.origQty);
-                                    fillable.executedQty = parseFloat(response.executedQty);
-                                    fillable.cummulativeQuoteQty = parseFloat(response.cummulativeQuoteQty);
-                                    fillable.side = response.side;
-                                    fillable.price = parseFloat(response.cummulativeQuoteQty)/parseFloat(response.origQty);
-                                    fillable.transactTime = moment.utc(response.transactTime).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
-                                    global.orderFilled[obj.symbol] = fillable;
-                                    console.log(global.orderFilled[obj.symbol]);
-                                });
+                                // binance.marketBuy(obj.symbol, execQuantity, (error, response) => {
+                                //     if(error) {return console.error(error)};
+                                //     let fillable = {};
+                                //     fillable.apiKey = process.env.API_KEY;
+                                //     fillable.symbol = response.symbol;
+                                //     fillable.orderId = response.orderId;
+                                //     fillable.origQty = parseFloat(response.origQty);
+                                //     fillable.executedQty = parseFloat(response.executedQty);
+                                //     fillable.cummulativeQuoteQty = parseFloat(response.cummulativeQuoteQty);
+                                //     fillable.side = response.side;
+                                //     fillable.price = parseFloat(response.cummulativeQuoteQty)/parseFloat(response.origQty);
+                                //     fillable.transactTime = moment.utc(response.transactTime).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
+                                //     global.orderFilled[obj.symbol] = fillable;
+                                //     console.log(global.orderFilled[obj.symbol]);
+                                // });
                             }
                         }
                     } 
@@ -150,28 +154,28 @@ setInterval(() => {
                     let diffLoss = parseFloat(global.orderFilled[obj.symbol].price)-parseFloat(current);
                     let diffProfit = parseFloat(current)-parseFloat(global.orderFilled[obj.symbol].price);
                     /* Check it meets Stoploss and take profit condition */
-                    if( parseFloat(global.orderFilled[obj.symbol].price) == 0 || (diffLoss >= parseFloat(global.orderFilled[obj.symbol].price)*parseFloat(process.env.STOP_LOSS)/100 || 
+                    if( (diffLoss >= parseFloat(global.orderFilled[obj.symbol].price)*parseFloat(process.env.STOP_LOSS)/100 || 
                         diffProfit >= parseFloat(global.orderFilled[obj.symbol].price)*parseFloat(process.env.TAKE_PROFIT)/100)){
                         /* Check symbol price is defined */
                         if(typeof global.symbolPrices[obj.symbol] !== 'undefined'){
                             let stepSize = Math.abs(Math.log10(global.filters[obj.symbol].stepSize));
                             let quantity = parseFloat(FixedToDown(global.balance[obj.symbol.replace('USDT','')].available, stepSize));
                             /* Market sell order */
-                            binance.marketSell(obj.symbol, quantity, (error, response)=>{
-                                if(error) {console.log(error.body); return};
-                                let fillable = {};
-                                fillable.apiKey = process.env.API_KEY;
-                                fillable.symbol = response.symbol;
-                                fillable.orderId = response.orderId;
-                                fillable.origQty = parseFloat(response.origQty);
-                                fillable.executedQty = parseFloat(response.executedQty);
-                                fillable.cummulativeQuoteQty = parseFloat(response.cummulativeQuoteQty);
-                                fillable.side = response.side;
-                                fillable.price = parseFloat(response.cummulativeQuoteQty)/parseFloat(response.origQty);
-                                fillable.transactTime = moment.utc(response.transactTime).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');;
-                                global.orderFilled[obj.symbol] = fillable;
-                                console.log(global.orderFilled[obj.symbol]);
-                            });
+                            // binance.marketSell(obj.symbol, quantity, (error, response)=>{
+                            //     if(error) {console.log(error.body); return};
+                            //     let fillable = {};
+                            //     fillable.apiKey = process.env.API_KEY;
+                            //     fillable.symbol = response.symbol;
+                            //     fillable.orderId = response.orderId;
+                            //     fillable.origQty = parseFloat(response.origQty);
+                            //     fillable.executedQty = parseFloat(response.executedQty);
+                            //     fillable.cummulativeQuoteQty = parseFloat(response.cummulativeQuoteQty);
+                            //     fillable.side = response.side;
+                            //     fillable.price = parseFloat(response.cummulativeQuoteQty)/parseFloat(response.origQty);
+                            //     fillable.transactTime = moment.utc(response.transactTime).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');;
+                            //     global.orderFilled[obj.symbol] = fillable;
+                            //     console.log(global.orderFilled[obj.symbol]);
+                            // });
                         }
                     }
                 }
@@ -184,7 +188,7 @@ setInterval(() => {
 subscribe();
 
 function subscribe(){
-    updateOrders();
+    // updateOrders();
     lastOrder();
     binance.prices((error, ticker) => {
         if ( error ) console.error(error);
@@ -296,9 +300,6 @@ function execution_update(data) {
             console.log(`${symbol} : Market Order ${side} Placed.`);
             // console.log(global.orderFilled[symbol]);
         }
-
-
-
 }
 binance.websockets.userData(balance_update, execution_update);
 
@@ -329,7 +330,7 @@ function updateOrders(){
                         .catch((error)=> console.log(error));
                 });
             }
-        }, {limit : 40});
+        });
     });
 }
 
@@ -340,6 +341,27 @@ function lastOrder(){
           }, {limit:1});
     }
 }
+
+setTimeout(() => {
+    for (let pair of usePairs){
+        binance.allOrders(pair, (error, orders, symbol) => {
+            if(error) console.log(error.body);
+            global.statistics[symbol].symbol = pair;
+            global.statistics[symbol].orderCounts = orders.length;
+            let sum = 0;
+            for (let order of orders){
+                if(order.side == 'BUY'){
+                    sum -= parseFloat(order.cummulativeQuoteQty)+parseFloat(order.cummulativeQuoteQty)*0.001;
+                }else if(order.side == 'SELL'){
+                    sum += parseFloat(order.cummulativeQuoteQty)-parseFloat(order.cummulativeQuoteQty)*0.001;
+                }
+            }
+            sum = sum+global.balance[symbol.replace('USDT', '')].usdtTotal;
+            global.statistics[symbol].usdtProfit = sum;
+            global.totalUsdtProfit += sum;
+        });
+    }
+}, 3000);
 
 function allOrders(symbol){ 
     binance.allOrders(symbol, (error, orders, symbol) => {

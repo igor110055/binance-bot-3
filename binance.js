@@ -4,6 +4,10 @@ require('dotenv').config();
 require('log-timestamp');
 
 const app =express();
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    next();
+  });
 app.use(express.json());
 const port = +process.env.CONTROL_PORT;
 const usePairs = process.env.PAIRS.replace(/\s/g,'').split(',');
@@ -24,12 +28,41 @@ const binance = require('./node-binance-api')().options({
     useServerTime: true // If you get timestamp errors, synchronize to server time at startup
   });
 
+app.get('/settings', (req, res) => {
+    let result = {};
+    result.totalUSDT = global.totalUsdtd;
+    result.currentUSDTBalance = global.balance['USDT'].available;
+    result.totalUSDTProfit = global.totalUsdtProfit;
+    result.totalUSDTProfitPercentage = (global.totalUsdtProfit/(global.totalUsdtd+Math.abs(global.totalUsdtProfit))*100).toFixed(2);
+    result.percentage = global.totalUsdtProfit;
+    result.stoploss = process.env.STOP_LOSS;
+    result.takeprofit = process.env.TAKE_PROFIT;
+    res.json(apiResponse({
+        result: result
+    }));
+});
+
+app.get('/symbolInfo', (req, res) => {
+    let result = global.statistics;
+    // usePairs.forEach(pair => {
+    //     result[pair].orderCounts = global.orderCounts[pair];
+    // });
+    // result[symbol].orderCounts = global.orderCounts[symbol];
+    res.json(apiResponse({
+        result: Object.keys(result).map(key => ({
+            ...result[key],
+            orderCounts: result[key].orderCounts,
+            usdtProfit: result[key].usdtProfit,
+            usdtProfitPercent: (result[key].usdtProfit/Math.abs(global.totalUsdtProfit)*100).toFixed(2)
+        }))
+    }));
+});
+
 /**
  * Get balance of the symbol
  */
 app.get('/get_balance', (req, res) => {
     let {asset} = req.body;
-    let result = asset;
     binance.balance((error, balances) => {
         // if ( error ) console.error(error);
         res.json(apiResponse({
