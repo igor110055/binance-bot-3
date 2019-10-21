@@ -44,10 +44,6 @@ app.get('/settings', (req, res) => {
 
 app.get('/symbolInfo', (req, res) => {
     let result = global.statistics;
-    // usePairs.forEach(pair => {
-    //     result[pair].orderCounts = global.orderCounts[pair];
-    // });
-    // result[symbol].orderCounts = global.orderCounts[symbol];
     res.json(apiResponse({
         result: Object.keys(result).map(key => ({
             ...result[key],

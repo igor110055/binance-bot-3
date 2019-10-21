@@ -28,7 +28,6 @@ const getOrder = function getOrder(apiKey, symbol, startTime, endTime) {
         .from('orders')
         .where('symbol', symbol)
         .orderBy('transactTime', 'desc')
-        .limit(20)
     if (startTime)
         query = query.andWhere('transactTime', '>=', startTime);
     if (endTime)

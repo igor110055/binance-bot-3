@@ -1,5 +1,5 @@
 const moment = require('moment-timezone');
-const {truncateOrders, insertOrder} = require('./database');
+const {truncateOrders, insertOrder, getOrder} = require('./database');
 
 require('dotenv').config();
 
@@ -342,12 +342,13 @@ function lastOrder(){
     }
 }
 
+// let aWeekAgo = moment(Date.now()).tz("Europe/Berlin").subtract(7,'d').format('YYYY-MM-DD HH:mm:ss');
+// console.log(aWeekAgo);
 setTimeout(() => {
     for (let pair of usePairs){
-        binance.allOrders(pair, (error, orders, symbol) => {
-            if(error) console.log(error.body);
-            global.statistics[symbol].symbol = pair;
-            global.statistics[symbol].orderCounts = orders.length;
+        getOrder(process.env.API_KEY, pair).then(orders=>{
+            let orderCount = 0;
+            // global.statistics[pair].symbol = pair;
             let sum = 0;
             for (let order of orders){
                 if(order.side == 'BUY'){
@@ -355,13 +356,17 @@ setTimeout(() => {
                 }else if(order.side == 'SELL'){
                     sum += parseFloat(order.cummulativeQuoteQty)-parseFloat(order.cummulativeQuoteQty)*0.001;
                 }
+                orderCount += 1;
             }
-            sum = sum+global.balance[symbol.replace('USDT', '')].usdtTotal;
-            global.statistics[symbol].usdtProfit = sum;
+            sum = sum+global.balance[pair.replace('USDT', '')].usdtTotal;
+            global.statistics[pair].symbol = pair;
+            global.statistics[pair].usdtProfit = sum;
+            global.statistics[pair].orderCounts = orderCount;
             global.totalUsdtProfit += sum;
         });
     }
 }, 3000);
+
 
 function allOrders(symbol){ 
     binance.allOrders(symbol, (error, orders, symbol) => {
