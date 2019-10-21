@@ -392,7 +392,7 @@ function getOrderWithDate(){
             global.statistics[pair].usdtProfit = sum;
             global.statistics[pair].orderCounts = orderCount;
             global.totalUsdtProfit += sum;
-            console.log(`${pair}:${sum}`);
+            // console.log(`${pair}:${sum}`);
         });
     }
     for (let pair of usePairs){
@@ -412,7 +412,6 @@ function getOrderWithDate(){
             global.statistics[pair].usdtProfit = sum;
             global.statistics[pair].orderCounts = orderCount;
             global.totalUsdtProfit += sum;
-            console.log(`${pair}:${sum}`);
         });
     }
 }
