@@ -29,7 +29,7 @@ const getOrder = function getOrder(apiKey, symbol, startTime, endTime) {
         .where('symbol', symbol)
         .orderBy('transactTime', 'desc')
     if (startTime)
-        query = query.andWhere('transactTime', '>=', startTime);
+        query = query.andWhere('transactTime', '>', startTime);
     if (endTime)
         query = query.andWhere('transactTime', '<=', endTime);
     return query;
