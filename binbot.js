@@ -188,7 +188,7 @@ setInterval(() => {
 subscribe();
 
 function subscribe(){
-    // updateOrders();
+    updateOrders();
     lastOrder();
     binance.prices((error, ticker) => {
         if ( error ) console.error(error);
