@@ -34,7 +34,6 @@ app.get('/settings', (req, res) => {
     result.currentUSDTBalance = global.balance['USDT'].available;
     result.totalUSDTProfit = global.totalUsdtProfit;
     result.totalUSDTProfitPercentage = global.totalUsdtProfit/(global.totalUsdtd+Math.abs(global.totalUsdtProfit))*100;
-    result.percentage = global.totalUsdtProfit;
     result.stoploss = process.env.STOP_LOSS;
     result.takeprofit = process.env.TAKE_PROFIT;
     res.json(apiResponse({

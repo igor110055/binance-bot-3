@@ -26,164 +26,141 @@ global.usdtProfit={};
 global.totalUsdtProfit =0;
 global.compare ={};
 global.statistics = {};
+global.currentStep = {};
 for(let pair of usePairs){
     global.compare[pair]= 0;
     global.statistics[pair] ={};
+    global.currentStep[pair] = 0;
 }
-
-/* 24hr change
-{ symbol: 'BTTUSDT',
-  priceChange: '0.00000130',
-  priceChangePercent: '0.297',
-  weightedAvgPrice: '0.00043830',
-  prevClosePrice: '0.00043760',
-  lastPrice: '0.00043870',
-  lastQty: '105874.00000000',
-  bidPrice: '0.00043820',
-  bidQty: '354742.00000000',
-  askPrice: '0.00043870',
-  askQty: '6261218.00000000',
-  openPrice: '0.00043740',
-  highPrice: '0.00044210',
-  lowPrice: '0.00043350',
-  volume: '5098557230.00000000',
-  quoteVolume: '2234695.09158540',
-  openTime: 1571063026371,
-  closeTime: 1571149426371,
-  firstId: 9797397,
-  lastId: 9804097,
-  count: 6701 } */
+const lossSteps=[
+    {step: 0, percent: 1, stop:1, orderPercent:0.4},
+    {step: 1, percent: 0.99, stop:0.995, orderPercent:0.05},
+    {step: 2, percent: 0.98, stop:0.99, orderPercent:0.05},
+    {step: 3, percent: 0.97, stop:0.985, orderPercent:0.15},
+    {step: 4, percent: 0.96, stop:0.98, orderPercent:0.15},
+    {step: 5, percent: 0.94, stop:0.9733, orderPercent:0.2}
+];
+global.stopPrice={};
+global.takeProfitPrice = {};
+global.serverStatus = 0;
 
 setInterval(() => {
-    binance.prevDay(false, (error, prevDay) => {
-        // if ( error ) return console.log(error.body);
-        for ( let obj of prevDay ) {
-            if(!usePairs.includes(obj.symbol)) continue;
-            if(typeof global.orderFilled[obj.symbol] === 'undefined'){
-                if(typeof global.lastOrder[obj.symbol] !== 'undefined'){
-                    let lastOrder = global.lastOrder[obj.symbol];
-                    let fillable = {};
-                    fillable.apiKey = process.env.API_KEY;
-                    fillable.symbol = lastOrder.symbol;
-                    fillable.orderId = lastOrder.orderId;
-                    fillable.origQty = parseFloat(lastOrder.origQty);
-                    fillable.executedQty = parseFloat(lastOrder.executedQty);
-                    fillable.cummulativeQuoteQty = parseFloat(lastOrder.cummulativeQuoteQty);
-                    fillable.side = lastOrder.side;
-                    fillable.price = lastOrder.price;
-                    fillable.transactTime = lastOrder.transactTime;
-                    global.orderFilled[obj.symbol] = fillable;
-                }else{
-                    global.orderFilled[obj.symbol] = {};
-                }
-            }
+    binance.prevDay(false, (error, response) => {
+        for (let obj of response){
+            let symbol = obj.symbol;
+            if(!usePairs.includes(symbol)) continue;
             let current = parseFloat(obj.bidPrice);
             let average = parseFloat(obj.weightedAvgPrice);
-            if(current <= average){
-                if(global.compare[obj.symbol] >= 0) {
-                    if( typeof(global.orderFilled[obj.symbol]) != 'undefined' ) {
-                        /* Check previous order history */
-                        if ( global.orderFilled[obj.symbol].side == 'SELL'){
-                            /* check symbol price is defined */
-                            if(typeof global.symbolPrices[obj.symbol] != 'undefined' && global.totalUsdtd > 0){
-                                let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length);
-                                let stepSize = Math.abs(Math.log10(global.filters[obj.symbol].stepSize));
-                                let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/current, stepSize));
-                                if(execQuantity < global.filters[obj.symbol].minQty) execQuantity = global.filters[obj.symbol].minQty;
-                                /* Market sell buy */
-                                // binance.marketBuy(obj.symbol, execQuantity, (error, response) => {
-                                //     if(error) {return console.error(error)};
-                                //     let fillable = {};
-                                //     fillable.apiKey = process.env.API_KEY;
-                                //     fillable.symbol = response.symbol;
-                                //     fillable.orderId = response.orderId;
-                                //     fillable.origQty = parseFloat(response.origQty);
-                                //     fillable.executedQty = parseFloat(response.executedQty);
-                                //     fillable.cummulativeQuoteQty = parseFloat(response.cummulativeQuoteQty);
-                                //     fillable.side = response.side;
-                                //     fillable.price = parseFloat(response.cummulativeQuoteQty)/parseFloat(response.origQty);
-                                //     fillable.transactTime = moment.utc(response.transactTime).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');;
-                                //     global.orderFilled[obj.symbol] = fillable;
-                                //     console.log(global.orderFilled[obj.symbol]);
-                                // });
-                            }
-                        }
-                    } 
-                }
-                global.compare[obj.symbol] = -1;
-            }
-            else if(current > average){
-                /* Process Order when server start */
-                if(global.compare[obj.symbol] = 0) {
-                    if( typeof(global.orderFilled[obj.symbol]) != 'undefined' ) {
-                        /* Check previous order history */
-                        if ( global.orderFilled[obj.symbol].side == 'SELL'){
-                            /* check symbol price is defined */
-                            if(typeof global.symbolPrices[obj.symbol] != 'undefined' && global.totalUsdtd > 0){
-                                let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length);
-                                let stepSize = Math.abs(Math.log10(global.filters[obj.symbol].stepSize));
-                                let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/current, stepSize));
-                                if(execQuantity < global.filters[obj.symbol].minQty) execQuantity = global.filters[obj.symbol].minQty;
-                                /* Market sell buy */
-                                // binance.marketBuy(obj.symbol, execQuantity, (error, response) => {
-                                //     if(error) {return console.error(error)};
-                                //     let fillable = {};
-                                //     fillable.apiKey = process.env.API_KEY;
-                                //     fillable.symbol = response.symbol;
-                                //     fillable.orderId = response.orderId;
-                                //     fillable.origQty = parseFloat(response.origQty);
-                                //     fillable.executedQty = parseFloat(response.executedQty);
-                                //     fillable.cummulativeQuoteQty = parseFloat(response.cummulativeQuoteQty);
-                                //     fillable.side = response.side;
-                                //     fillable.price = parseFloat(response.cummulativeQuoteQty)/parseFloat(response.origQty);
-                                //     fillable.transactTime = moment.utc(response.transactTime).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
-                                //     global.orderFilled[obj.symbol] = fillable;
-                                //     console.log(global.orderFilled[obj.symbol]);
-                                // });
-                            }
-                        }
-                    } 
-                }
-                global.compare[obj.symbol] = 1;
-            }
-
-            /* Market sell part */
-            if( typeof global.orderFilled[obj.symbol] != 'undefined'){
-                /* Check previous order history */
-                if( global.orderFilled[obj.symbol].length != 0 && global.orderFilled[obj.symbol].side == 'BUY'){
-                    let diffLoss = parseFloat(global.orderFilled[obj.symbol].price)-parseFloat(current);
-                    let diffProfit = parseFloat(current)-parseFloat(global.orderFilled[obj.symbol].price);
-                    /* Check it meets Stoploss and take profit condition */
-                    if( (diffLoss >= parseFloat(global.orderFilled[obj.symbol].price)*parseFloat(process.env.STOP_LOSS)/100 || 
-                        diffProfit >= parseFloat(global.orderFilled[obj.symbol].price)*parseFloat(process.env.TAKE_PROFIT)/100)){
-                        /* Check symbol price is defined */
-                        if(typeof global.symbolPrices[obj.symbol] !== 'undefined'){
-                            let stepSize = Math.abs(Math.log10(global.filters[obj.symbol].stepSize));
-                            let quantity = parseFloat(FixedToDown(global.balance[obj.symbol.replace('USDT','')].available, stepSize));
-                            /* Market sell order */
-                            // binance.marketSell(obj.symbol, quantity, (error, response)=>{
-                            //     if(error) {console.log(error.body); return};
-                            //     let fillable = {};
-                            //     fillable.apiKey = process.env.API_KEY;
-                            //     fillable.symbol = response.symbol;
-                            //     fillable.orderId = response.orderId;
-                            //     fillable.origQty = parseFloat(response.origQty);
-                            //     fillable.executedQty = parseFloat(response.executedQty);
-                            //     fillable.cummulativeQuoteQty = parseFloat(response.cummulativeQuoteQty);
-                            //     fillable.side = response.side;
-                            //     fillable.price = parseFloat(response.cummulativeQuoteQty)/parseFloat(response.origQty);
-                            //     fillable.transactTime = moment.utc(response.transactTime).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');;
-                            //     global.orderFilled[obj.symbol] = fillable;
-                            //     console.log(global.orderFilled[obj.symbol]);
-                            // });
-                        }
+            let currentPercent = current/average;
+            // let Epsillon = global.filters[symbol].tickSize/10;
+            
+            /* Set steps when server starts up */
+            if(typeof global.takeProfitPrice[symbol] == 'undefined'){
+                let lastOrderPrice = global.lastOrder[symbol].cummulativeQuoteQty/global.lastOrder[symbol].executedQty;
+                global.takeProfitPrice[symbol] = lastOrderPrice*(1+process.env.TAKE_PROFIT/100);
+                let checkPercent = lastOrderPrice/average;
+                if(global.lastOrder[symbol].side=='BUY'){
+                    // console.log(`${symbol} CheckPercent: ${checkPercent}`);
+                    if(checkPercent<=lossSteps[0].percent && checkPercent>lossSteps[1].percent){
+                        global.currentStep[symbol] = 1;
+                    }else if(checkPercent<=lossSteps[1].percent && checkPercent>lossSteps[2].percent){
+                        global.currentStep[symbol] = 2;
+                    }else if(checkPercent<=lossSteps[2].percent && checkPercent>lossSteps[3].percent){
+                        global.currentStep[symbol] = 3;
+                    }else if(checkPercent<=lossSteps[3].percent && checkPercent>lossSteps[4].percent){
+                        global.currentStep[symbol] = 4;
+                    }else if(checkPercent<=lossSteps[4].percent && checkPercent>lossSteps[5].percent){
+                        global.currentStep[symbol] = 5;
+                    }else if(checkPercent<=lossSteps[5].percent){
+                        global.currentStep[symbol] = 6
+                    }else{
+                        global.currentStep[symbol] = 6
                     }
                 }
             }
+            // console.log(`${symbol} step:${global.currentStep[symbol]}, Current Percent: ${currentPercent}, Current: ${current}, Average: ${average}`);
+            // console.log(global.takeProfitPrice[symbol]);
+            if(global.currentStep[symbol] == 0 && currentPercent<=lossSteps[0].percent && currentPercent>lossSteps[1].percent){
+                // Do step 0
+                console.log(`${symbol}: Do step 0 BUY`);
+                market_Buy(symbol, current, lossSteps[0].orderPercent);
+                global.takeProfitPrice[symbol] = average*lossSteps[0].stop*(1+process.env.TAKE_PROFIT/100);
+                global.currentStep[symbol] = 1;
+            }else if(global.currentStep[symbol]==1 && currentPercent<=lossSteps[1].percent && currentPercent>lossSteps[2].percent){
+                //Do step 1
+                console.log(`${symbol}: Do step 1 BUY`);
+                market_Buy(symbol, current, lossSteps[1].orderPercent);
+                global.takeProfitPrice[symbol] = average*lossSteps[1].stop*(1+process.env.TAKE_PROFIT/100);
+                global.currentStep[symbol] = 2;
+            }else if(global.currentStep[symbol]==2 && currentPercent<=lossSteps[2].percent && currentPercent>lossSteps[3].percent){
+                //Do step 2
+                console.log(`${symbol}: Do step 2 BUY`);
+                market_Buy(symbol, current, lossSteps[2].orderPercent);
+                global.takeProfitPrice[symbol] = average*lossSteps[2].stop*(1+process.env.TAKE_PROFIT/100);
+                global.currentStep[symbol] = 3;
+            }else if(global.currentStep[symbol]==3 && currentPercent<=lossSteps[3].percent && currentPercent>lossSteps[4].percent){
+                //Do step 3
+                console.log(`${symbol}: Do step 3 BUY`);
+                market_Buy(symbol, current, lossSteps[3].orderPercent);
+                global.takeProfitPrice[symbol] = average*lossSteps[3].stop*(1+process.env.TAKE_PROFIT/100);
+                global.currentStep[symbol] = 4;
+            }else if(global.currentStep[symbol]==4 && currentPercent<=lossSteps[4].percent && currentPercent>lossSteps[5].percent){
+                //Do step 4
+                console.log(`${symbol}: Do step 4 BUY`);
+                market_Buy(symbol, current, lossSteps[4].orderPercent);
+                global.takeProfitPrice[symbol] = average*lossSteps[4].stop*(1+process.env.TAKE_PROFIT/100);
+                global.currentStep[symbol] = 5;
+            }else if(global.currentStep[symbol]==5 && currentPercent<=lossSteps[5].percent){
+                //Do step 5
+                console.log(`${symbol}: Do step 5 BUY`);
+                market_Buy(symbol, current, lossSteps[5].orderPercent);
+                global.takeProfitPrice[symbol] = average*lossSteps[5].stop*(1+process.env.TAKE_PROFIT/100);
+                global.currentStep[symbol] = 6
+            }else if(currentPercent<=(100-process.env.STOP_LOSS)/100){
+                /* Do Market Sell */
+                console.log(`${symbol}: Stop loss SELL`);
+                market_Sell(symbol);
+                global.currentStep[symbol] = 0
+            }else if(current>=global.takeProfitPrice[symbol]){
+                /* Market sell */
+                console.log(`${symbol}: Take profit SELL`);
+                market_Sell(symbol);
+                global.currentStep[symbol] = 0
+            }
         }
         useBalance();
-      });
-}, 10000);
+    });
+}, 5000);
+
+
+function market_Buy(symbol, symbolPrice, orderPercent){
+    let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*orderPercent;
+    let stepSize = Math.abs(Math.log10(global.filters[symbol].stepSize));
+    let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/symbolPrice, stepSize));
+    if(execQuantity > global.filters[symbol].minQty) {
+        /* Market sell buy */
+        // binance.marketBuy(symbol, execQuantity, (error, response) => {
+        //     if(error) {return console.error(error)};
+        //     console.log(response);
+        // });
+    }else{
+        console.log(`${symbol} BUY: Execution quantity ${execQuantity} should be bigger than minQty ${global.filters[symbol].minQty}`);
+    }
+}
+
+function market_Sell(symbol){
+    let stepSize = Math.abs(Math.log10(global.filters[symbol].stepSize));
+    let execQuantity = parseFloat(FixedToDown(global.balance[symbol.replace('USDT','')].available, stepSize));
+    if(execQuantity > global.filters[symbol].minQty){
+        /* Market sell order */
+        // binance.marketSell(symbol, execQuantity, (error, response)=>{
+        //     if(error) {console.log(error.body); return};
+        //     console.log(response);
+        // });
+    }else{
+        console.log(`${symbol} SELL: Execution quantity ${execQuantity} should be bigger than minQty ${global.filters[symbol].minQty}`);
+    }
+}
 
 subscribe();
 
@@ -342,7 +319,6 @@ function lastOrder(){
     }
 }
 
-
 setTimeout(() => {
     getAllOrders();
     // getOrderWithDate();
@@ -488,51 +464,6 @@ VETUSDT:
   updateTime: 1571112898253,
   isWorking: true } */
 
-// function symbolPrice(symbol){
-//     binance.prices(symbol, (error, ticker) => {
-//         global.symbolPrice[symbol] = ticker[symbol];
-//       });
-// }
-
-// binance.prices('BNBBTC', (error, ticker) => {
-//     if(error) console.log(error);
-//     this.symbolPrices['BNBBTC'] = ticker['BNBBTC'];
-//     console.log(ticker['BNBBTC']);
-//   });
-// setInterval(() => {
-//     let current = global.prevdayticker.ETHTUSD.bestBid;
-//     let average = global.prevdayticker.ETHTUSD.averagePrice;
-    
-//     if(current < average){
-//         if(global.compare > 0) {
-//             console.log("Up, Make Order");
-//             quantity = 0;
-//             binance.marketBuy("ETHTUSD", quantity, (error, response) => {
-//                 console.log("Market Buy response", response);
-//                 setOpenOrderVariable(response);
-//             });
-//         }
-//         global.compare = -1;
-//     }
-//     else if(current >= average){
-//         if(global.compare < 0) {
-//             console.log("Down, nothing!");
-//         }
-//         global.compare = 1;
-//     }
-
-//     function setOpenOrderVariable(response){
-//         global.openOrders.symbol = response.symbol;
-//         let obj = global.openOrders.symbol;
-//         obj.orderID = response.orderID;
-//         obj.fillPrice = response.fills[0].price;
-//         obj.fillQty = response.fills[0].qty;
-//         obj.transactTime = response.transactTime;
-//     }
-//     // console.log(global.openOrders);
-
-// }, 2000);
-
 /**
  * 
     var quantity = 0.1;
@@ -563,32 +494,25 @@ fills:
 }
  */
 
-/* Get the balances of all pairs */
-/* function balance() {
-	binance.balance((error, balances) => {
-		if ( error ) console.error(error);
-		let usdt = 0.00;
-		for ( let asset in balances ) {
-			let obj = balances[asset];
-			obj.available = parseFloat(obj.available);
-			//if ( !obj.available ) continue;
-			obj.onOrder = parseFloat(obj.onOrder);
-			obj.usdtValue = 0;
-			obj.usdtTotal = 0;
-			if ( asset == 'USDT' ) obj.usdtValue = obj.available;
-            else obj.usdtValue = obj.available * global.ticker[asset+'USDT'];
-            
-			if ( asset == 'USDT' ) obj.usdtTotal = obj.available + obj.onOrder;
-            else obj.usdtTotal = (obj.available + obj.onOrder) * global.ticker[asset+'USDT'];
-            
-			if ( isNaN(obj.usdtValue) ) obj.usdtValue = 0;
-            if ( isNaN(obj.usdtTotal) ) obj.usdtTotal = 0;
-            
-			usdt += parseFloat(obj.usdtTotal);
-            global.balance[asset] = obj;
-        }
-        // console.log(global.balance);
-        // console.log(usdt);
-	});
-} */
-
+/* 24hr change
+{ symbol: 'BTTUSDT',
+  priceChange: '0.00000130',
+  priceChangePercent: '0.297',
+  weightedAvgPrice: '0.00043830',
+  prevClosePrice: '0.00043760',
+  lastPrice: '0.00043870',
+  lastQty: '105874.00000000',
+  bidPrice: '0.00043820',
+  bidQty: '354742.00000000',
+  askPrice: '0.00043870',
+  askQty: '6261218.00000000',
+  openPrice: '0.00043740',
+  highPrice: '0.00044210',
+  lowPrice: '0.00043350',
+  volume: '5098557230.00000000',
+  quoteVolume: '2234695.09158540',
+  openTime: 1571063026371,
+  closeTime: 1571149426371,
+  firstId: 9797397,
+  lastId: 9804097,
+  count: 6701 } */
