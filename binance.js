@@ -46,6 +46,8 @@ app.get('/symbolInfo', (req, res) => {
     res.json(apiResponse({
         result: Object.keys(result).map(key => ({
             ...result[key],
+            asset: global.balance[key.replace('USDT', '')].available,
+            assetUsdtValue: global.balance[key.replace('USDT', '')].usdtTotal,
             orderCounts: result[key].orderCounts,
             usdtProfit: result[key].usdtProfit,
             usdtProfitPercent: (result[key].usdtProfit/Math.abs(global.totalUsdtProfit)*100).toFixed(2)

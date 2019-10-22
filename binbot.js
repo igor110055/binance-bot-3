@@ -78,7 +78,7 @@ setInterval(() => {
                     }
                 }
             }
-            // console.log(`${symbol} step:${global.currentStep[symbol]}, Current Percent: ${currentPercent}, Current: ${current}, Average: ${average}`);
+            console.log(`${symbol} step:${global.currentStep[symbol]}, Current Percent: ${currentPercent}, Current: ${current}, Average: ${average}`);
             // console.log(global.takeProfitPrice[symbol]);
             if(global.currentStep[symbol] == 0 && currentPercent<=lossSteps[0].percent && currentPercent>lossSteps[1].percent){
                 // Do step 0
