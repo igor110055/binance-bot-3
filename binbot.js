@@ -118,20 +118,30 @@ setInterval(() => {
                 global.currentStep[symbol] = 6
             }else if(currentPercent<=(100-process.env.STOP_LOSS)/100){
                 /* Do Market Sell */
-                console.log(`${symbol}: Stop loss SELL`);
+                // console.log(`${symbol}: Stop loss SELL`);
                 market_Sell(symbol);
                 global.currentStep[symbol] = 0
             }else if(current>=global.takeProfitPrice[symbol]){
                 /* Market sell */
-                console.log(`${symbol}: Take profit SELL`);
+                // console.log(`${symbol}: Take profit SELL`);
                 market_Sell(symbol);
-                global.currentStep[symbol] = 0
+                global.currentStep[symbol] = 0;
             }
         }
         useBalance();
+        getAllOrders();
+        binance.prices((error, ticker) => {
+            if ( error ) console.error(error);
+            for ( let symbol in ticker ) {
+                if(!usePairs.includes(symbol)) continue;
+                global.symbolPrices[symbol] = parseFloat(ticker[symbol]);
+            }
+            // useBalance();
+            // console.log(global.symbolPrices);
+            // console.log(global.totalUsdtd);
+        });
     });
 }, 5000);
-
 
 function market_Buy(symbol, symbolPrice, orderPercent){
     let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*orderPercent;
@@ -139,12 +149,10 @@ function market_Buy(symbol, symbolPrice, orderPercent){
     let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/symbolPrice, stepSize));
     if(execQuantity > global.filters[symbol].minQty) {
         /* Market sell buy */
-        binance.marketBuy(symbol, execQuantity, (error, response) => {
-            if(error) {return console.error(error)};
-            console.log(response);
-        });
-    }else{
-        console.log(`${symbol} BUY: Execution quantity ${execQuantity} should be bigger than minQty ${global.filters[symbol].minQty}`);
+        // binance.marketBuy(symbol, execQuantity, (error, response) => {
+        //     if(error) {return console.error(error)};
+        //     console.log(response);
+        // });
     }
 }
 
@@ -153,12 +161,10 @@ function market_Sell(symbol){
     let execQuantity = parseFloat(FixedToDown(global.balance[symbol.replace('USDT','')].available, stepSize));
     if(execQuantity > global.filters[symbol].minQty){
         /* Market sell order */
-        binance.marketSell(symbol, execQuantity, (error, response)=>{
-            if(error) {console.log(error.body); return};
-            console.log(response);
-        });
-    }else{
-        console.log(`${symbol} SELL: Execution quantity ${execQuantity} should be bigger than minQty ${global.filters[symbol].minQty}`);
+        // binance.marketSell(symbol, execQuantity, (error, response)=>{
+        //     if(error) {console.log(error.body); return};
+        //     console.log(response);
+        // });
     }
 }
 
