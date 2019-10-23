@@ -129,7 +129,6 @@ setInterval(() => {
             }
         }
         useBalance();
-        getAllOrders();
         binance.prices((error, ticker) => {
             if ( error ) console.error(error);
             for ( let symbol in ticker ) {
@@ -167,7 +166,6 @@ function market_Sell(symbol){
         });
     }
 }
-
 subscribe();
 
 function subscribe(){
