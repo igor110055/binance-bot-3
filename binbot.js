@@ -63,7 +63,7 @@ setInterval(() => {
                         global.currentPercent[symbol] = current/global.stopPrice[symbol];
                         if(global.currentPercent[symbol]<1){
                             /* Sync step */
-                            for (let xtep = finalStep; xtep <= 2; xtep++){
+                            for (let xtep = finalStep; xtep <= 1; xtep++){
                                 if(global.currentPercent[symbol]<=lossSteps[xtep].percent){
                                     global.currentStep[symbol] = xtep+1;
                                     global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[xtep].stop*(1+process.env.TAKE_PROFIT/100);
@@ -126,10 +126,10 @@ function market_Buy(symbol, symbolPrice, orderPercent){
     let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/symbolPrice, stepSize));
     if(execQuantity > global.filters[symbol].minQty) {
         /* Market sell buy */
-        binance.marketBuy(symbol, execQuantity, (error, response) => {
-            if(error) {console.log(error)};
-            console.log(response);
-        });
+        // binance.marketBuy(symbol, execQuantity, (error, response) => {
+        //     if(error) {console.log(error)};
+        //     console.log(response);
+        // });
     }
 }
 
@@ -138,10 +138,10 @@ function market_Sell(symbol){
     let execQuantity = parseFloat(FixedToDown(global.balance[symbol.replace('USDT','')].available, stepSize));
     if(execQuantity > global.filters[symbol].minQty){
         /* Market sell order */
-        binance.marketSell(symbol, execQuantity, (error, response)=>{
-            if(error) {console.log(error);}
-            console.log(response);
-        });
+        // binance.marketSell(symbol, execQuantity, (error, response)=>{
+        //     if(error) {console.log(error);}
+        //     console.log(response);
+        // });
     }
 }
 subscribe();
