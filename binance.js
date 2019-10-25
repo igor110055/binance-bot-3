@@ -48,9 +48,7 @@ app.get('/symbolInfo', (req, res) => {
             ...result[key],
             asset: global.balance[key.replace('USDT', '')].available,
             assetUsdtValue: global.balance[key.replace('USDT', '')].usdtTotal,
-            checkPercent: global.checkPercent[key],
-            currentPercent: global.currentPercent[key],
-            orderCounts: result[key].orderCounts,
+            currentPricePercent: global.currentPercent[key],
             usdtProfit: result[key].usdtProfit,
             usdtProfitPercent: (result[key].usdtProfit/Math.abs(global.totalUsdtProfit)*100).toFixed(2)
         }))
@@ -122,6 +120,7 @@ app.post('/market_order', (req, res) => {
     let {symbol:symbol, quantity:quantity, side:side} = req.body;
     if(side === "BUY"){
         binance.marketBuy(symbol, quantity, (error, response) => {
+            if(error) console.log(error);
             // Now you can limit sell with a stop loss, etc.
             res.json(apiResponse({
                 result: response

@@ -81,8 +81,7 @@ setInterval(() => {
                         }
                     }
                 }
-                console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, takeProfit: ${global.takeProfitPrice[symbol]}`);
-                // console.log(`${symbol} step:${global.currentStep[symbol]}, Current Percent: ${currentPercent}, Current: ${current}, Average: ${average}`);
+                // console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, takeProfit: ${global.takeProfitPrice[symbol]}`);
                 // console.log(global.takeProfitPrice[symbol]);
 
                 if(global.currentStep[symbol] == 0 && tickerPercent<=lossSteps[0].percent && tickerPercent>lossSteps[1].percent){
@@ -122,12 +121,14 @@ setInterval(() => {
                     market_Sell(symbol);
                     global.currentStep[symbol] = 0;
                     global.stopPrice[symbol] = 0;
+                    global.currentPercent[symbol] = 0;
                 }else if(global.stopPrice[symbol]>0 && current>=global.takeProfitPrice[symbol]){
                     /* Market sell */
                     console.log(`${symbol}: Take profit SELL`);
                     market_Sell(symbol);
                     global.currentStep[symbol] = 0;
                     global.stopPrice[symbol] = 0;
+                    global.currentPercent[symbol] = 0;
                 }
 
                 if(global.stopPrice[symbol]>0){
@@ -136,6 +137,7 @@ setInterval(() => {
             }
         }
     });
+    getAllOrders();
 }, 10000);
 
 function market_Buy(symbol, symbolPrice, orderPercent){
@@ -319,16 +321,17 @@ function lastOrder(){
     }
 }
 
-
 setTimeout(() => {
-    getAllOrders();
+    // getAllOrders();
     finalStep();
     // getOrderWithDate();
 }, 3000);
 
 function getAllOrders(){
+    let startTime = '2019-10-25 06:30:00';
+    let totalUsdtProfit = 0;
     for (let pair of usePairs){
-        getOrder(process.env.API_KEY, pair).then(orders=>{
+        getOrder(process.env.API_KEY, pair, startTime).then(orders=>{
             let orderCount = 0;
             let sum = 0;
             for (let order of orders){
@@ -343,7 +346,8 @@ function getAllOrders(){
             global.statistics[pair].symbol = pair;
             global.statistics[pair].usdtProfit = sum;
             global.statistics[pair].orderCounts = orderCount;
-            global.totalUsdtProfit += sum;
+            totalUsdtProfit += sum;
+            global.totalUsdtProfit = totalUsdtProfit;
         });
     }
 }
