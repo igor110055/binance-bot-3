@@ -329,7 +329,7 @@ setTimeout(() => {
 }, 3000);
 
 function getAllOrders(){
-    let startTime = '2019-10-25 08:30:00';
+    let startTime = '2019-10-25 08:15:00';
     let totalUsdtProfit = 0;
     for (let pair of usePairs){
         getOrder(process.env.API_KEY, pair, startTime).then(orders=>{
