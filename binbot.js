@@ -148,7 +148,7 @@ function market_Buy(symbol, symbolPrice, orderPercent){
     if(execQuantity > global.filters[symbol].minQty) {
         /* Market sell buy */
         binance.marketBuy(symbol, execQuantity, (error, response) => {
-            if(error) {return console.error(error)};
+            if(error) {console.log(error)};
             console.log(response);
         });
     }
@@ -160,7 +160,7 @@ function market_Sell(symbol){
     if(execQuantity > global.filters[symbol].minQty){
         /* Market sell order */
         binance.marketSell(symbol, execQuantity, (error, response)=>{
-            if(error) {return console.error(error.body);}
+            if(error) {console.log(error);}
             console.log(response);
         });
     }
