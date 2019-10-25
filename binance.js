@@ -48,6 +48,8 @@ app.get('/symbolInfo', (req, res) => {
             ...result[key],
             asset: global.balance[key.replace('USDT', '')].available,
             assetUsdtValue: global.balance[key.replace('USDT', '')].usdtTotal,
+            checkPercent: global.checkPercent[key],
+            currentPercent: global.currentPercent[key],
             orderCounts: result[key].orderCounts,
             usdtProfit: result[key].usdtProfit,
             usdtProfitPercent: (result[key].usdtProfit/Math.abs(global.totalUsdtProfit)*100).toFixed(2)

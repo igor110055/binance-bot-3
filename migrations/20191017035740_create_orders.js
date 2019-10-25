@@ -2,7 +2,7 @@
 exports.up = function(knex) {
     return knex.schema.createTable('orders', function (t) {
         t.increments('id').primary().unsigned()
-        t.string('apiKey', 45).notNullable()
+        t.text('apiKey', 'longtext').notNullable()
         t.string('symbol', 45).notNullable()
         t.integer('orderId').notNullable()
         t.float('origQty', 45,8)

@@ -28,21 +28,21 @@ global.compare ={};
 global.statistics = {};
 global.currentStep = {};
 global.currentPercent = {};
-global.checkPercent = {};
+global.finalStep = {};
+global.stopPrice={};
 for(let pair of usePairs){
     global.compare[pair]= 0;
     global.statistics[pair] ={};
     global.currentStep[pair] = 0;
+    global.stopPrice[pair] = 0;
 }
 const lossSteps=[
-    {step: 0, percent: 1, stop:1, orderPercent:0.4},
+    {step: 0, percent: 1, stop:1, orderPercent:0.65},
     {step: 1, percent: 0.99, stop:0.995, orderPercent:0.05},
     {step: 2, percent: 0.98, stop:0.99, orderPercent:0.05},
     {step: 3, percent: 0.97, stop:0.985, orderPercent:0.15},
-    {step: 4, percent: 0.96, stop:0.98, orderPercent:0.15},
-    {step: 5, percent: 0.94, stop:0.9733, orderPercent:0.2}
+    {step: 4, percent: 0.96, stop:0.98, orderPercent:0.10}
 ];
-global.stopPrice={};
 global.takeProfitPrice = {};
 global.serverStatus = 0;
 
@@ -55,85 +55,83 @@ setInterval(() => {
                 if(!usePairs.includes(symbol)) continue;
                 let current = parseFloat(obj.bidPrice);
                 let average = parseFloat(obj.weightedAvgPrice);
-                let currentPercent = current/average;
-                global.currentPercent[symbol] = currentPercent;
+                let tickerPercent = current/average;
                 // let Epsillon = global.filters[symbol].tickSize/10;
                 
                 /* Set steps when server starts up */
                 if(typeof global.takeProfitPrice[symbol] == 'undefined'){
-                    let lastOrderPrice = global.lastOrder[symbol].cummulativeQuoteQty/global.lastOrder[symbol].executedQty;
-                    // console.log(`${symbol} Pair: ${lastOrderPrice}`);
-                    global.takeProfitPrice[symbol] = lastOrderPrice*(1+process.env.TAKE_PROFIT/100);
-                    let checkPercent = lastOrderPrice/average;
-                    global.checkPercent[symbol] = checkPercent;
-                    // console.log(`${symbol} checkPercent: ${checkPercent}`);
-                    if(global.lastOrder[symbol].side=='BUY'){
-                        // console.log(`${symbol} CheckPercent: ${checkPercent}`);
-                        if(checkPercent<=lossSteps[0].percent && checkPercent>lossSteps[1].percent){
-                            global.currentStep[symbol] = 1;
-                        }else if(checkPercent<=lossSteps[1].percent && checkPercent>lossSteps[2].percent){
-                            global.currentStep[symbol] = 2;
-                        }else if(checkPercent<=lossSteps[2].percent && checkPercent>lossSteps[3].percent){
-                            global.currentStep[symbol] = 3;
-                        }else if(checkPercent<=lossSteps[3].percent && checkPercent>lossSteps[4].percent){
-                            global.currentStep[symbol] = 4;
-                        }else if(checkPercent<=lossSteps[4].percent && checkPercent>lossSteps[5].percent){
-                            global.currentStep[symbol] = 5;
-                        }else if(checkPercent<=lossSteps[5].percent){
-                            global.currentStep[symbol] = 6
-                        }else{
-                            global.currentStep[symbol] = 6
+                    let finalStep = global.finalStep[symbol];
+                    if(finalStep > 0){
+                        global.currentPercent[symbol] = current/global.stopPrice[symbol];
+                        if(global.currentPercent[symbol]<1){
+                            /* Sync step */
+                            for (let xtep = finalStep; xtep <= 4; xtep++){
+                                if(global.currentPercent[symbol]<=lossSteps[xtep].percent){
+                                    global.currentStep[symbol] = xtep+1;
+                                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[xtep].stop*(1+process.env.TAKE_PROFIT/100);
+                                }else{
+                                    global.currentStep[symbol] = xtep;
+                                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[xtep-1].stop*(1+process.env.TAKE_PROFIT/100);
+                                    break;
+                                }
+                            }
+                        }else if(global.currentPercent[symbol] >=1){
+                            global.currentStep[symbol] = finalStep;
+                            global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[finalStep-1].stop*(1+process.env.TAKE_PROFIT/100);
                         }
                     }
                 }
+                console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, takeProfit: ${global.takeProfitPrice[symbol]}`);
                 // console.log(`${symbol} step:${global.currentStep[symbol]}, Current Percent: ${currentPercent}, Current: ${current}, Average: ${average}`);
                 // console.log(global.takeProfitPrice[symbol]);
-                if(global.currentStep[symbol] == 0 && currentPercent<=lossSteps[0].percent && currentPercent>lossSteps[1].percent){
+
+                if(global.currentStep[symbol] == 0 && tickerPercent<=lossSteps[0].percent && tickerPercent>lossSteps[1].percent){
                     // Do step 0
                     console.log(`${symbol}: Do step 0 BUY`);
+                    global.stopPrice[symbol] = average;
                     market_Buy(symbol, current, lossSteps[0].orderPercent);
-                    global.takeProfitPrice[symbol] = average*lossSteps[0].stop*(1+process.env.TAKE_PROFIT/100);
+                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[0].stop*(1+process.env.TAKE_PROFIT/100);
                     global.currentStep[symbol] = 1;
-                }else if(global.currentStep[symbol]==1 && currentPercent<=lossSteps[1].percent && currentPercent>lossSteps[2].percent){
+                }else if(global.currentStep[symbol]==1 && global.currentPercent[symbol]<=lossSteps[1].percent && global.currentPercent[symbol]>lossSteps[2].percent){
                     //Do step 1
                     console.log(`${symbol}: Do step 1 BUY`);
                     market_Buy(symbol, current, lossSteps[1].orderPercent);
-                    global.takeProfitPrice[symbol] = average*lossSteps[1].stop*(1+process.env.TAKE_PROFIT/100);
+                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[1].stop*(1+process.env.TAKE_PROFIT/100);
                     global.currentStep[symbol] = 2;
-                }else if(global.currentStep[symbol]==2 && currentPercent<=lossSteps[2].percent && currentPercent>lossSteps[3].percent){
+                }else if(global.currentStep[symbol]==2 && global.currentPercent[symbol]<=lossSteps[2].percent && global.currentPercent[symbol]>lossSteps[3].percent){
                     //Do step 2
                     console.log(`${symbol}: Do step 2 BUY`);
                     market_Buy(symbol, current, lossSteps[2].orderPercent);
-                    global.takeProfitPrice[symbol] = average*lossSteps[2].stop*(1+process.env.TAKE_PROFIT/100);
+                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[2].stop*(1+process.env.TAKE_PROFIT/100);
                     global.currentStep[symbol] = 3;
-                }else if(global.currentStep[symbol]==3 && currentPercent<=lossSteps[3].percent && currentPercent>lossSteps[4].percent){
+                }else if(global.currentStep[symbol]==3 && global.currentPercent[symbol]<=lossSteps[3].percent && global.currentPercent[symbol]>lossSteps[4].percent){
                     //Do step 3
                     console.log(`${symbol}: Do step 3 BUY`);
                     market_Buy(symbol, current, lossSteps[3].orderPercent);
-                    global.takeProfitPrice[symbol] = average*lossSteps[3].stop*(1+process.env.TAKE_PROFIT/100);
+                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[3].stop*(1+process.env.TAKE_PROFIT/100);
                     global.currentStep[symbol] = 4;
-                }else if(global.currentStep[symbol]==4 && currentPercent<=lossSteps[4].percent && currentPercent>lossSteps[5].percent){
+                }else if(global.currentStep[symbol]==4 && global.currentPercent[symbol]<=lossSteps[4].percent && global.currentPercent[symbol]>lossSteps[5].percent){
                     //Do step 4
                     console.log(`${symbol}: Do step 4 BUY`);
                     market_Buy(symbol, current, lossSteps[4].orderPercent);
-                    global.takeProfitPrice[symbol] = average*lossSteps[4].stop*(1+process.env.TAKE_PROFIT/100);
+                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[4].stop*(1+process.env.TAKE_PROFIT/100);
                     global.currentStep[symbol] = 5;
-                }else if(global.currentStep[symbol]==5 && currentPercent<=lossSteps[5].percent){
-                    //Do step 5
-                    console.log(`${symbol}: Do step 5 BUY`);
-                    market_Buy(symbol, current, lossSteps[5].orderPercent);
-                    global.takeProfitPrice[symbol] = average*lossSteps[5].stop*(1+process.env.TAKE_PROFIT/100);
-                    global.currentStep[symbol] = 6
-                }else if(currentPercent<=(100-process.env.STOP_LOSS)/100){
+                }else if(global.stopPrice[symbol]>0 && global.currentPercent[symbol]<=(100-process.env.STOP_LOSS)/100){
                     /* Do Market Sell */
-                    // console.log(`${symbol}: Stop loss SELL`);
-                    market_Sell(symbol);
-                    global.currentStep[symbol] = 0
-                }else if(current>=global.takeProfitPrice[symbol]){
-                    /* Market sell */
-                    // console.log(`${symbol}: Take profit SELL`);
+                    console.log(`${symbol}: Stop loss SELL`);
                     market_Sell(symbol);
                     global.currentStep[symbol] = 0;
+                    global.stopPrice[symbol] = 0;
+                }else if(global.stopPrice[symbol]>0 && current>=global.takeProfitPrice[symbol]){
+                    /* Market sell */
+                    console.log(`${symbol}: Take profit SELL`);
+                    market_Sell(symbol);
+                    global.currentStep[symbol] = 0;
+                    global.stopPrice[symbol] = 0;
+                }
+
+                if(global.stopPrice[symbol]>0){
+                    global.currentPercent[symbol] = current/global.stopPrice[symbol];
                 }
             }
         }
@@ -321,8 +319,10 @@ function lastOrder(){
     }
 }
 
+
 setTimeout(() => {
     getAllOrders();
+    finalStep();
     // getOrderWithDate();
 }, 3000);
 
@@ -344,6 +344,22 @@ function getAllOrders(){
             global.statistics[pair].usdtProfit = sum;
             global.statistics[pair].orderCounts = orderCount;
             global.totalUsdtProfit += sum;
+        });
+    }
+}
+
+function finalStep(){
+    for (let pair of usePairs){
+        getOrder(process.env.API_KEY, pair).then(function (orders){
+            let step = 0;
+            let stopPrice = 0;
+            for(let order of orders){
+                if(order.side == 'SELL') break;
+                step += 1;
+                stopPrice = order.price;
+            }
+            global.finalStep[pair] = step;
+            global.stopPrice[pair] = stopPrice;
         });
     }
 }
