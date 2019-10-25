@@ -20,7 +20,8 @@
     "ws": "^4.1.0"
   },
   "scripts": {
-    "start": "node binance.js",
+    "start": "nodemon binance.js",
+    "dev": "nodemon binance.js",
     "test": "mocha",
     "test-debug": "mocha --inspect-brk",
     "lint": "eslint **/*.{js,jsx} --quiet",

@@ -38,11 +38,8 @@ for(let pair of usePairs){
     global.stopPrice[pair] = 0;
 }
 const lossSteps=[
-    {step: 0, percent: 1, stop:1, orderPercent:0.65},
-    {step: 1, percent: 0.99, stop:0.995, orderPercent:0.05},
-    {step: 2, percent: 0.98, stop:0.99, orderPercent:0.05},
-    {step: 3, percent: 0.97, stop:0.985, orderPercent:0.15},
-    {step: 4, percent: 0.96, stop:0.98, orderPercent:0.10}
+    {step: 0, percent: 1, stop:1, orderPercent:0.6},
+    {step: 1, percent: 0.99, stop:0.995, orderPercent:0.4}
 ];
 global.takeProfitPrice = {};
 global.serverStatus = 0;
@@ -66,7 +63,7 @@ setInterval(() => {
                         global.currentPercent[symbol] = current/global.stopPrice[symbol];
                         if(global.currentPercent[symbol]<1){
                             /* Sync step */
-                            for (let xtep = finalStep; xtep <= 4; xtep++){
+                            for (let xtep = finalStep; xtep <= 2; xtep++){
                                 if(global.currentPercent[symbol]<=lossSteps[xtep].percent){
                                     global.currentStep[symbol] = xtep+1;
                                     global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[xtep].stop*(1+process.env.TAKE_PROFIT/100);
@@ -98,24 +95,6 @@ setInterval(() => {
                     market_Buy(symbol, current, lossSteps[1].orderPercent);
                     global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[1].stop*(1+process.env.TAKE_PROFIT/100);
                     global.currentStep[symbol] = 2;
-                }else if(global.currentStep[symbol]==2 && global.currentPercent[symbol]<=lossSteps[2].percent && global.currentPercent[symbol]>lossSteps[3].percent){
-                    //Do step 2
-                    console.log(`${symbol}: Do step 2 BUY`);
-                    market_Buy(symbol, current, lossSteps[2].orderPercent);
-                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[2].stop*(1+process.env.TAKE_PROFIT/100);
-                    global.currentStep[symbol] = 3;
-                }else if(global.currentStep[symbol]==3 && global.currentPercent[symbol]<=lossSteps[3].percent && global.currentPercent[symbol]>lossSteps[4].percent){
-                    //Do step 3
-                    console.log(`${symbol}: Do step 3 BUY`);
-                    market_Buy(symbol, current, lossSteps[3].orderPercent);
-                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[3].stop*(1+process.env.TAKE_PROFIT/100);
-                    global.currentStep[symbol] = 4;
-                }else if(global.currentStep[symbol]==4 && global.currentPercent[symbol]<=lossSteps[4].percent && global.currentPercent[symbol]>lossSteps[5].percent){
-                    //Do step 4
-                    console.log(`${symbol}: Do step 4 BUY`);
-                    market_Buy(symbol, current, lossSteps[4].orderPercent);
-                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[4].stop*(1+process.env.TAKE_PROFIT/100);
-                    global.currentStep[symbol] = 5;
                 }else if(global.stopPrice[symbol]>0 && global.currentPercent[symbol]<=(100-process.env.STOP_LOSS)/100){
                     /* Do Market Sell */
                     console.log(`${symbol}: Stop loss SELL`);
@@ -454,6 +433,7 @@ binance.exchangeInfo(function(error, data) {
         minimums[obj.symbol] = filters;
     }
     global.filters = minimums;
+    // console.log(global.filters);
     //fs.writeFile("minimums.json", JSON.stringify(minimums, null, 4), function(err){});
 });
 
