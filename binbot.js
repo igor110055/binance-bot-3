@@ -24,6 +24,7 @@ global.symbolInfo = {};
 global.filters ={};
 global.usdtProfit={};
 global.totalUsdtProfit =0;
+global.totalAbsUsdtProfit =0;
 global.compare ={};
 global.statistics = {};
 global.currentStep = {};
@@ -347,7 +348,9 @@ function getAllOrders(){
             global.statistics[pair].usdtProfit = sum;
             global.statistics[pair].orderCounts = orderCount;
             totalUsdtProfit += sum;
+            totalAbsUsdtProfit += Math.abs(sum);
             global.totalUsdtProfit = totalUsdtProfit;
+            global.totalAbsUsdtProfit = totalUsdtProfit;
         });
     }
 }

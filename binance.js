@@ -50,7 +50,7 @@ app.get('/symbolInfo', (req, res) => {
             assetUsdtValue: global.balance[key.replace('USDT', '')].usdtTotal,
             currentPricePercent: global.currentPercent[key],
             usdtProfit: result[key].usdtProfit,
-            usdtProfitPercent: (result[key].usdtProfit/Math.abs(global.totalUsdtProfit)*100).toFixed(2)
+            usdtProfitPercent: (result[key].usdtProfit/Math.abs(global.totalAbsUsdtProfit)*100).toFixed(2)
         }))
     }));
 });
