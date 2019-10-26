@@ -89,7 +89,7 @@ setInterval(() => {
                     market_Buy(symbol, current, lossSteps[0].orderPercent);
                     global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[0].stop*(1+process.env.TAKE_PROFIT/100);
                     global.currentStep[symbol] = 1;
-                }else if(global.currentStep[symbol]==1 && global.currentPercent[symbol]<=lossSteps[1].percent && global.currentPercent[symbol]>lossSteps[2].percent){
+                }else if(global.currentStep[symbol]==1 && global.currentPercent[symbol]<=lossSteps[1].percent){
                     //Do step 1
                     console.log(`${symbol}: Do step 1 BUY`);
                     market_Buy(symbol, current, lossSteps[1].orderPercent);
@@ -302,7 +302,7 @@ function lastOrder(){
 }
 
 setTimeout(() => {
-    // getAllOrders();
+    getAllOrders();
     finalStep();
     // getOrderWithDate();
 }, 3000);
