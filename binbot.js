@@ -59,6 +59,7 @@ setInterval(() => {
                 /* Set steps when server starts up */
                 if(typeof global.takeProfitPrice[symbol] == 'undefined'){
                     let finalStep = global.finalStep[symbol];
+                    console.log(`${symbol}: Final Step ${finalStep}`);
                     if(finalStep > 0){
                         global.currentPercent[symbol] = current/global.stopPrice[symbol];
                         if(global.currentPercent[symbol]<1){
@@ -81,7 +82,6 @@ setInterval(() => {
                 }
                 // console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, takeProfit: ${global.takeProfitPrice[symbol]}`);
                 // console.log(global.takeProfitPrice[symbol]);
-
                 if(global.currentStep[symbol] == 0 && tickerPercent<=lossSteps[0].percent && tickerPercent>lossSteps[1].percent){
                     // Do step 0
                     console.log(`${symbol}: Do step 0 BUY`);
@@ -126,10 +126,10 @@ function market_Buy(symbol, symbolPrice, orderPercent){
     let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/symbolPrice, stepSize));
     if(execQuantity > global.filters[symbol].minQty) {
         /* Market sell buy */
-        binance.marketBuy(symbol, execQuantity, (error, response) => {
-            if(error) {console.log(error)};
-            console.log(response);
-        });
+        // binance.marketBuy(symbol, execQuantity, (error, response) => {
+        //     if(error) {console.log(error)};
+        //     console.log(response);
+        // });
     }
 }
 
@@ -138,10 +138,10 @@ function market_Sell(symbol){
     let execQuantity = parseFloat(FixedToDown(global.balance[symbol.replace('USDT','')].available, stepSize));
     if(execQuantity > global.filters[symbol].minQty){
         /* Market sell order */
-        binance.marketSell(symbol, execQuantity, (error, response)=>{
-            if(error) {console.log(error);}
-            console.log(response);
-        });
+        // binance.marketSell(symbol, execQuantity, (error, response)=>{
+        //     if(error) {console.log(error);}
+        //     console.log(response);
+        // });
     }
 }
 subscribe();
@@ -332,7 +332,6 @@ function getAllOrders(){
             global.totalAbsUsdtProfit = totalUsdtProfit;
         });
     }
-    // console.log(global.statistics);
 }
 
 function finalStep(){
@@ -340,10 +339,13 @@ function finalStep(){
         getOrder(process.env.API_KEY, pair).then(function (orders){
             let step = 0;
             let stopPrice = 0;
+            let orderPrice='';
             for(let order of orders){
                 if(order.side == 'SELL') break;
-                step += 1;
                 stopPrice = order.price;
+                if(orderPrice == order.price) continue;
+                step += 1;
+                orderPrice = order.price;
             }
             global.finalStep[pair] = step;
             global.stopPrice[pair] = stopPrice;
