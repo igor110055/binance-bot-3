@@ -20,7 +20,7 @@
     "ws": "^4.1.0"
   },
   "scripts": {
-    "start": "nodemon binance.js",
+    "start": "node binance.js",
     "dev": "nodemon binance.js",
     "test": "mocha",
     "test-debug": "mocha --inspect-brk",

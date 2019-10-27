@@ -29,7 +29,10 @@ global.compare ={};
 global.statistics = {};
 global.currentStep = {};
 global.currentPercent = {};
+global.cummulativeSum ={};
+global.executedSum = {};
 global.finalStep = {};
+global.priceAverage={};
 global.stopPrice={};
 for(let pair of usePairs){
     global.compare[pair]= 0;
@@ -38,8 +41,8 @@ for(let pair of usePairs){
     global.stopPrice[pair] = 0;
 }
 const lossSteps=[
-    {step: 0, percent: 1, stop:1, orderPercent:0.6},
-    {step: 1, percent: 0.99, stop:0.995, orderPercent:0.4}
+    {step: 0, percent: 1, orderPercent:0.6},
+    {step: 1, percent: 0.97, orderPercent:0.4}
 ];
 global.takeProfitPrice = {};
 global.serverStatus = 0;
@@ -55,29 +58,19 @@ setInterval(() => {
                 let average = parseFloat(obj.weightedAvgPrice);
                 let tickerPercent = current/average;
                 // let Epsillon = global.filters[symbol].tickSize/10;
-                
+
                 /* Set steps when server starts up */
                 if(typeof global.takeProfitPrice[symbol] == 'undefined'){
                     let finalStep = global.finalStep[symbol];
-                    // console.log(`${symbol}: Final Step ${finalStep}`);
-                    if(finalStep > 0){
+                    if(finalStep == 1){
+                        /* Sync step */
                         global.currentPercent[symbol] = current/global.stopPrice[symbol];
-                        if(global.currentPercent[symbol]<1){
-                            /* Sync step */
-                            for (let xtep = finalStep; xtep <= 1; xtep++){
-                                if(global.currentPercent[symbol]<=lossSteps[xtep].percent){
-                                    global.currentStep[symbol] = xtep+1;
-                                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[xtep].stop*(1+process.env.TAKE_PROFIT/100);
-                                }else{
-                                    global.currentStep[symbol] = xtep;
-                                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[xtep-1].stop*(1+process.env.TAKE_PROFIT/100);
-                                    break;
-                                }
-                            }
-                        }else if(global.currentPercent[symbol] >=1){
-                            global.currentStep[symbol] = finalStep;
-                            global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[finalStep-1].stop*(1+process.env.TAKE_PROFIT/100);
-                        }
+                        global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
+                        global.currentStep[symbol] = 1;
+                    }else if(finalStep == 2){
+                        global.currentPercent[symbol] = current/global.stopPrice[symbol];
+                        global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
+                        global.currentStep[symbol] = 2;
                     }
                 }
                 // console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, takeProfit: ${global.takeProfitPrice[symbol]}`);
@@ -85,15 +78,22 @@ setInterval(() => {
                 if(global.currentStep[symbol] == 0 && tickerPercent<=lossSteps[0].percent && tickerPercent>lossSteps[1].percent){
                     // Do step 0
                     console.log(`${symbol}: Do step 0 BUY`);
-                    global.stopPrice[symbol] = average;
+                    global.stopPrice[symbol] = current;
+                    global.priceAverage[symbol] = current;
                     market_Buy(symbol, current, lossSteps[0].orderPercent);
-                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[0].stop*(1+process.env.TAKE_PROFIT/100);
+                    global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
                     global.currentStep[symbol] = 1;
-                }else if(global.currentStep[symbol]==1 && global.currentPercent[symbol]<=lossSteps[1].percent){
+                }else if(global.currentStep[symbol]==1 && global.currentPercent[symbol]<=lossSteps[1].percent && global.currentPercent[symbol]>(100-process.env.STOP_LOSS)/100){
                     //Do step 1
                     console.log(`${symbol}: Do step 1 BUY`);
                     market_Buy(symbol, current, lossSteps[1].orderPercent);
-                    global.takeProfitPrice[symbol] = global.stopPrice[symbol]*lossSteps[1].stop*(1+process.env.TAKE_PROFIT/100);
+                    /* Calculate the priceAverage to calculate the takeprofitPrice */
+                    let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*lossSteps[1].orderPercent;
+                    let stepSize = Math.abs(Math.log10(global.filters[symbol].stepSize));
+                    let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/current, stepSize));
+                    global.priceAverage[symbol] = (global.cummulativeSum+perUsdtQuantity)/(global.executedSum+execQuantity);
+
+                    global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
                     global.currentStep[symbol] = 2;
                 }else if(global.stopPrice[symbol]>0 && global.currentPercent[symbol]<=(100-process.env.STOP_LOSS)/100){
                     /* Do Market Sell */
@@ -117,7 +117,21 @@ setInterval(() => {
             }
         }
     });
+    /* Update Statistics Values */
     getAllOrders();
+    /* Update cummulativeSum and executedSum */
+    finalStep();
+    /* Update balances */
+    binance.prices((error, ticker) => {
+        if ( error ) console.error(error);
+        for ( let symbol in ticker ) {
+            if(!usePairs.includes(symbol)) continue;
+            global.symbolPrices[symbol] = parseFloat(ticker[symbol]);
+        }
+        useBalance(); 
+        // console.log(global.symbolPrices);
+        // console.log(global.totalUsdtd);
+    });
 }, 10000);
 
 function market_Buy(symbol, symbolPrice, orderPercent){
@@ -126,10 +140,10 @@ function market_Buy(symbol, symbolPrice, orderPercent){
     let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/symbolPrice, stepSize));
     if(execQuantity > global.filters[symbol].minQty) {
         /* Market sell buy */
-        binance.marketBuy(symbol, execQuantity, (error, response) => {
-            if(error) {console.log(error)};
-            console.log(response);
-        });
+        // binance.marketBuy(symbol, execQuantity, (error, response) => {
+        //     if(error) {console.log(error)};
+        //     console.log(response);
+        // });
     }
 }
 
@@ -138,10 +152,10 @@ function market_Sell(symbol){
     let execQuantity = parseFloat(FixedToDown(global.balance[symbol.replace('USDT','')].available, stepSize));
     if(execQuantity > global.filters[symbol].minQty){
         /* Market sell order */
-        binance.marketSell(symbol, execQuantity, (error, response)=>{
-            if(error) {console.log(error);}
-            console.log(response);
-        });
+        // binance.marketSell(symbol, execQuantity, (error, response)=>{
+        //     if(error) {console.log(error);}
+        //     console.log(response);
+        // });
     }
 }
 subscribe();
@@ -201,30 +215,37 @@ function useBalance(){
 /* The only time the user data (account balances) and order execution websockets will fire, is if you create or cancel an order, or an order gets filled or partially filled */
 function balance_update(data) {
     console.log("Balance Update");
-    let usdt = 0;
-	for ( let arr of data.B ) {
-		let { a:asset, f:available, l:onOrder } = arr;
-        if ( ! usePairs.includes(asset+"USDT") && asset != 'USDT' ) continue;
-        let obj = {};
-        obj.available = parseFloat(available);
-        obj.onOrder = parseFloat(onOrder);
-        obj.usdtValue = 0;
-        obj.usdtTotal = 0;
-        if ( asset == 'USDT' ) obj.usdtValue = parseFloat(available);
-        else obj.usdtValue = parseFloat(available) * global.symbolPrices[asset+"USDT"];
-        
-        if ( asset == 'USDT' ) obj.usdtTotal = parseFloat(available) + parseFloat(onOrder);
-        else obj.usdtTotal = (parseFloat(available) + parseFloat(onOrder)) * global.symbolPrices[asset+"USDT"];
-        
-        if ( isNaN(obj.usdtValue) ) obj.usdtValue = 0;
-        if ( isNaN(obj.usdtTotal) ) obj.usdtTotal = 0;
-        
-        usdt += parseFloat(obj.usdtTotal);
-        global.balance[asset] = obj;
-    }
-    global.totalUsdtd = usdt;
-    // console.log(global.balance);
-    // console.log(global.totalUsdtd);
+    binance.prices((error, ticker) => {
+        if ( error ) console.error(error);
+        for ( let symbol in ticker ) {
+            if(!usePairs.includes(symbol)) continue;
+            global.symbolPrices[symbol] = parseFloat(ticker[symbol]);
+        }
+        let usdt = 0;
+        for ( let arr of data.B ) {
+            let { a:asset, f:available, l:onOrder } = arr;
+            if ( ! usePairs.includes(asset+"USDT") && asset != 'USDT' ) continue;
+            let obj = {};
+            obj.available = parseFloat(available);
+            obj.onOrder = parseFloat(onOrder);
+            obj.usdtValue = 0;
+            obj.usdtTotal = 0;
+            if ( asset == 'USDT' ) obj.usdtValue = parseFloat(available);
+            else obj.usdtValue = parseFloat(available) * global.symbolPrices[asset+"USDT"];
+            
+            if ( asset == 'USDT' ) obj.usdtTotal = parseFloat(available) + parseFloat(onOrder);
+            else obj.usdtTotal = (parseFloat(available) + parseFloat(onOrder)) * global.symbolPrices[asset+"USDT"];
+            
+            if ( isNaN(obj.usdtValue) ) obj.usdtValue = 0;
+            if ( isNaN(obj.usdtTotal) ) obj.usdtTotal = 0;
+            
+            usdt += parseFloat(obj.usdtTotal);
+            global.balance[asset] = obj;
+        }
+        global.totalUsdtd = usdt;
+        // console.log(global.balance);
+        // console.log(global.totalUsdtd);
+    });
 }
 function execution_update(data) {
     let { x:executionType, s:symbol, p:price, q:quantity, S:side, o:orderType, i:orderId, X:orderStatus, Z:cummulativeQuoteQty,
@@ -310,6 +331,7 @@ setTimeout(() => {
 function getAllOrders(){
     let startTime = '2019-10-25 08:15:00';
     let totalUsdtProfit = 0;
+    let totalAbsUsdtProfit = 0;
     for (let pair of usePairs){
         getOrder(process.env.API_KEY, pair, startTime).then(orders=>{
             let orderCount = 0;
@@ -326,11 +348,11 @@ function getAllOrders(){
             global.statistics[pair].symbol = pair;
             global.statistics[pair].usdtProfit = sum;
             global.statistics[pair].orderCounts = orderCount;
-            totalUsdtProfit += sum;
-            totalAbsUsdtProfit += Math.abs(sum);
-            global.totalUsdtProfit = totalUsdtProfit;
-            global.totalAbsUsdtProfit = totalUsdtProfit;
         });
+        totalUsdtProfit += global.statistics[pair].usdtProfit;
+        totalAbsUsdtProfit += Math.abs(global.statistics[pair].usdtProfit);
+        global.totalUsdtProfit = totalUsdtProfit;
+        global.totalAbsUsdtProfit = totalAbsUsdtProfit;
     }
 }
 
@@ -340,13 +362,20 @@ function finalStep(){
             let step = 0;
             let stopPrice = 0;
             let orderPrice='';
+            let cummulativeSum= 0;
+            let executedSum = 0;
             for(let order of orders){
                 if(order.side == 'SELL') break;
                 stopPrice = order.price;
+                cummulativeSum += order.cummulativeQuoteQty;
+                executedSum += order.executedQty;
                 if(orderPrice == order.price) continue;
                 step += 1;
                 orderPrice = order.price;
             }
+            global.cummulativeSum = cummulativeSum;
+            global.executedSum = executedSum;
+            global.priceAverage[pair] = cummulativeSum/executedSum; 
             global.finalStep[pair] = step;
             global.stopPrice[pair] = stopPrice;
         });
