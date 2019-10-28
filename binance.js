@@ -52,7 +52,7 @@ app.get('/symbolInfo', (req, res) => {
         res.json(apiResponse({
             result: Object.keys(result).map(key => ({
                 ...result[key],
-                asset: global.balance[key.replace('USDT', '')].available,
+                asset: (global.balance) ? global.balance[key.replace('USDT', '')].available : {},
                 assetUsdtValue: global.balance[key.replace('USDT', '')].usdtTotal,
                 currentPricePercent: global.currentPercent[key],
                 usdtProfit: result[key].usdtProfit,

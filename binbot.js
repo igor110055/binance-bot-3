@@ -72,7 +72,11 @@ setInterval(() => {
                 }
                 // console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, takeProfit: ${global.takeProfitPrice[symbol]}`);
                 // console.log(global.takeProfitPrice[symbol]);
-                if(global.currentStep[symbol] == 0 && tickerPercent<=lossSteps[0].percent && tickerPercent>lossSteps[1].percent){
+                if(global.stopPrice[symbol]>0){
+                    global.currentPercent[symbol] = current/global.stopPrice[symbol];
+                }
+
+                if(global.currentStep[symbol] == 0 && tickerPercent<=1 && tickerPercent>0.99){
                     // Do step 0
                     console.log(`${symbol}: Do step 0 BUY`);
                     global.stopPrice[symbol] = current;
@@ -106,10 +110,6 @@ setInterval(() => {
                     global.currentStep[symbol] = 0;
                     global.stopPrice[symbol] = 0;
                     global.currentPercent[symbol] = 0;
-                }
-
-                if(global.stopPrice[symbol]>0){
-                    global.currentPercent[symbol] = current/global.stopPrice[symbol];
                 }
             }
         }
@@ -166,7 +166,7 @@ function subscribe(){
             if(!usePairs.includes(symbol)) continue;
             global.symbolPrices[symbol] = parseFloat(ticker[symbol]);
         }
-        useBalance(); 
+        useBalance();
         // console.log(global.symbolPrices);
         // console.log(global.totalUsdtd);
     });
