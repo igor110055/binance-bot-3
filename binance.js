@@ -43,17 +43,21 @@ app.get('/settings', (req, res) => {
 });
 
 app.get('/symbolInfo', (req, res) => {
-    let result = global.statistics;
-    res.json(apiResponse({
-        result: Object.keys(result).map(key => ({
-            ...result[key],
-            asset: global.balance[key.replace('USDT', '')].available,
-            assetUsdtValue: global.balance[key.replace('USDT', '')].usdtTotal,
-            currentPricePercent: global.currentPercent[key],
-            usdtProfit: result[key].usdtProfit,
-            usdtProfitPercent: (result[key].usdtProfit/Math.abs(global.totalAbsUsdtProfit)*100).toFixed(2)
-        }))
-    }));
+    try{
+        let result = global.statistics;
+        res.json(apiResponse({
+            result: Object.keys(result).map(key => ({
+                ...result[key],
+                asset: global.balance[key.replace('USDT', '')].available,
+                assetUsdtValue: global.balance[key.replace('USDT', '')].usdtTotal,
+                currentPricePercent: global.currentPercent[key],
+                usdtProfit: result[key].usdtProfit,
+                usdtProfitPercent: (result[key].usdtProfit/Math.abs(global.totalAbsUsdtProfit)*100).toFixed(2)
+            }))
+        }));
+    } catch (error){
+        res.json(apiResponse(error, false));
+    }
 });
 
 /**
