@@ -361,7 +361,7 @@ function finalStep(){
         getOrder(process.env.API_KEY, pair).then(function (orders){
             let step = 0;
             let stopPrice = 0;
-            let orderPrice='';
+            let orderOrigQty='';
             let cummulativeSum= 0;
             let executedSum = 0;
             for(let order of orders){
@@ -369,9 +369,9 @@ function finalStep(){
                 stopPrice = order.price;
                 cummulativeSum += order.cummulativeQuoteQty;
                 executedSum += order.executedQty;
-                if(orderPrice == order.price) continue;
+                if(orderOrigQty == order.origQty) continue;
                 step += 1;
-                orderPrice = order.price;
+                orderOrigQty = order.origQty;
             }
             global.cummulativeSum = cummulativeSum;
             global.executedSum = executedSum;
