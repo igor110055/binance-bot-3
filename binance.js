@@ -30,16 +30,20 @@ const binance = require('./node-binance-api')().options({
   });
 
 app.get('/settings', (req, res) => {
-    let result = {};
-    result.totalUSDT = global.totalUsdtd;
-    result.currentUSDTBalance = global.balance['USDT'].available;
-    result.totalUSDTProfit = global.totalUsdtProfit;
-    result.totalUSDTProfitPercentage = global.totalUsdtProfit/(global.totalUsdtd+Math.abs(global.totalUsdtProfit))*100;
-    result.stoploss = process.env.STOP_LOSS;
-    result.takeprofit = process.env.TAKE_PROFIT;
-    res.json(apiResponse({
-        result: result
-    }));
+    try{
+        let result = {};
+        result.totalUSDT = global.totalUsdtd;
+        result.currentUSDTBalance = global.balance['USDT'].available;
+        result.totalUSDTProfit = global.totalUsdtProfit;
+        result.totalUSDTProfitPercentage = global.totalUsdtProfit/(global.totalUsdtd+Math.abs(global.totalUsdtProfit))*100;
+        result.stoploss = process.env.STOP_LOSS;
+        result.takeprofit = process.env.TAKE_PROFIT;
+        res.json(apiResponse({
+            result: result
+        }));
+    } catch (error){
+        console.log(error);
+    }
 });
 
 app.get('/symbolInfo', (req, res) => {
@@ -56,7 +60,7 @@ app.get('/symbolInfo', (req, res) => {
             }))
         }));
     } catch (error){
-        res.json(apiResponse(error, false));
+        console.log(error);
     }
 });
 
