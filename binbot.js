@@ -128,7 +128,7 @@ setInterval(() => {
             if(!usePairs.includes(symbol)) continue;
             global.symbolPrices[symbol] = parseFloat(ticker[symbol]);
         }
-        useBalance(); 
+        useBalance();
         // console.log(global.symbolPrices);
         // console.log(global.totalUsdtd);
     });
@@ -177,11 +177,12 @@ function subscribe(){
 
 /* Get balance of usePairs Set global balance on server start up*/
 function useBalance(){
-        binance.balance((error, balances) => {
-            if (error) console.log(error.body);
+    binance.balance(function (error, balances) {
+        try{
+            if (error) console.log(error);
             let usdt = 0.00;
             /* Get symbol Price */
-            if(typeof balances != 'undefined'){
+            if(isEmpty(balances) == false){
                 for (let pair of usePairs){
                     let asset = pair.replace('USDT','');
                     let obj = balances[asset];
@@ -209,7 +210,10 @@ function useBalance(){
                 global.totalUsdtd = usdt + global.balance['USDT'].usdtTotal;
             }
             // console.log(global.balance);
-        });
+        }catch(error){
+            console.log(error);
+        }
+    });
 }
 
 /* The only time the user data (account balances) and order execution websockets will fire, is if you create or cancel an order, or an order gets filled or partially filled */
@@ -240,9 +244,9 @@ function balance_update(data) {
             if ( isNaN(obj.usdtTotal) ) obj.usdtTotal = 0;
             
             usdt += parseFloat(obj.usdtTotal);
-            global.balance[asset] = obj;
+            // global.balance[asset] = obj;
         }
-        global.totalUsdtd = usdt;
+        // global.totalUsdtd = usdt;
         // console.log(global.balance);
         // console.log(global.totalUsdtd);
     });
