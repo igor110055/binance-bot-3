@@ -25,7 +25,6 @@ global.filters ={};
 global.usdtProfit={};
 global.totalUsdtProfit =0;
 global.totalAbsUsdtProfit =0;
-global.compare ={};
 global.statistics = {};
 global.currentStep = {};
 global.currentPercent = {};
@@ -35,7 +34,6 @@ global.finalStep = {};
 global.priceAverage={};
 global.stopPrice={};
 for(let pair of usePairs){
-    global.compare[pair]= 0;
     global.statistics[pair] ={};
     global.currentStep[pair] = 0;
     global.stopPrice[pair] = 0;
@@ -45,7 +43,6 @@ const lossSteps=[
     {step: 1, percent: 0.97, orderPercent:0.4}
 ];
 global.takeProfitPrice = {};
-global.serverStatus = 0;
 
 setInterval(() => {
     binance.prevDay(false, (error, response) => {
@@ -128,7 +125,7 @@ setInterval(() => {
             if(!usePairs.includes(symbol)) continue;
             global.symbolPrices[symbol] = parseFloat(ticker[symbol]);
         }
-        useBalance();
+        // useBalance();
         // console.log(global.symbolPrices);
         // console.log(global.totalUsdtd);
     });
@@ -244,9 +241,9 @@ function balance_update(data) {
             if ( isNaN(obj.usdtTotal) ) obj.usdtTotal = 0;
             
             usdt += parseFloat(obj.usdtTotal);
-            // global.balance[asset] = obj;
+            global.balance[asset] = obj;
         }
-        // global.totalUsdtd = usdt;
+        global.totalUsdtd = usdt;
         // console.log(global.balance);
         // console.log(global.totalUsdtd);
     });
