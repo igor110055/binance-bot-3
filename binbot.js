@@ -71,7 +71,7 @@ setInterval(() => {
                     }
                 }
                 // console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, takeProfit: ${global.takeProfitPrice[symbol]}`);
-                console.log(`${symbol} Price Average: ${global.priceAverage[symbol]}`);
+                // console.log(`${symbol} Price Average: ${global.priceAverage[symbol]}`);
                 if(global.stopPrice[symbol]>0){
                     global.currentPercent[symbol] = current/global.stopPrice[symbol];
                 }
