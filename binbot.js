@@ -75,7 +75,6 @@ setInterval(() => {
                 if(global.stopPrice[symbol]>0){
                     global.currentPercent[symbol] = current/global.stopPrice[symbol];
                 }
-
                 if(global.currentStep[symbol] == 0 && tickerPercent<=1 && tickerPercent>0.99){
                     // Do step 0
                     console.log(`${symbol}: Do step 0 BUY`);
@@ -92,24 +91,23 @@ setInterval(() => {
                     let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*lossSteps[1].orderPercent;
                     let stepSize = Math.abs(Math.log10(global.filters[symbol].stepSize));
                     let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/current, stepSize));
-                    global.priceAverage[symbol] = (global.cummulativeSum+perUsdtQuantity)/(global.executedSum+execQuantity);
-
+                    global.priceAverage[symbol] = (global.cummulativeSum[symbol]+perUsdtQuantity)/(global.executedSum[symbol]+execQuantity);
                     global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
                     global.currentStep[symbol] = 2;
-                }else if(global.stopPrice[symbol]>0 && global.currentPercent[symbol]<=(100-process.env.STOP_LOSS)/100){
+                }else if(global.currentStep[symbol]>0 && global.currentPercent[symbol]<=(100-process.env.STOP_LOSS)/100){
                     /* Do Market Sell */
                     console.log(`${symbol}: Stop loss SELL`);
-                    market_Sell(symbol);
                     global.currentStep[symbol] = 0;
                     global.stopPrice[symbol] = 0;
                     global.currentPercent[symbol] = 0;
-                }else if(global.stopPrice[symbol]>0 && current>=global.takeProfitPrice[symbol]){
+                    market_Sell(symbol);
+                }else if(global.currentStep[symbol]>0 && current>=global.takeProfitPrice[symbol]){
                     /* Market sell */
                     console.log(`${symbol}: Take profit SELL`);
-                    market_Sell(symbol);
                     global.currentStep[symbol] = 0;
                     global.stopPrice[symbol] = 0;
                     global.currentPercent[symbol] = 0;
+                    market_Sell(symbol);
                 }
             }
         }
@@ -137,10 +135,10 @@ function market_Buy(symbol, symbolPrice, orderPercent){
     let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/symbolPrice, stepSize));
     if(execQuantity > global.filters[symbol].minQty) {
         /* Market sell buy */
-        binance.marketBuy(symbol, execQuantity, (error, response) => {
-            if(error) {console.log(error)};
-            console.log(response);
-        });
+        // binance.marketBuy(symbol, execQuantity, (error, response) => {
+        //     if(error) {console.log(error)};
+        //     console.log(response);
+        // });
     }
 }
 
@@ -149,10 +147,10 @@ function market_Sell(symbol){
     let execQuantity = parseFloat(FixedToDown(global.balance[symbol.replace('USDT','')].available, stepSize));
     if(execQuantity > global.filters[symbol].minQty){
         /* Market sell order */
-        binance.marketSell(symbol, execQuantity, (error, response)=>{
-            if(error) {console.log(error);}
-            console.log(response);
-        });
+        // binance.marketSell(symbol, execQuantity, (error, response)=>{
+        //     if(error) {console.log(error);}
+        //     console.log(response);
+        // });
     }
 }
 subscribe();
@@ -374,8 +372,8 @@ function finalStep(){
                 step += 1;
                 orderOrigQty = order.origQty;
             }
-            global.cummulativeSum = cummulativeSum;
-            global.executedSum = executedSum;
+            global.cummulativeSum[pair] = cummulativeSum;
+            global.executedSum[pair] = executedSum;
             global.priceAverage[pair] = cummulativeSum/executedSum; 
             global.finalStep[pair] = step;
             global.stopPrice[pair] = stopPrice;
