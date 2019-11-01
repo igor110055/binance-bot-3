@@ -64,14 +64,13 @@ setInterval(() => {
                         global.currentPercent[symbol] = current/global.stopPrice[symbol];
                         global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
                         global.currentStep[symbol] = 1;
-                    }else if(finalStep == 2){
+                    }else if(finalStep >= 2){
                         global.currentPercent[symbol] = current/global.stopPrice[symbol];
                         global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
                         global.currentStep[symbol] = 2;
                     }
                 }
                 // console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, takeProfit: ${global.takeProfitPrice[symbol]}`);
-                // console.log(`${symbol} Price Average: ${global.priceAverage[symbol]}`);
                 if(global.stopPrice[symbol]>0){
                     global.currentPercent[symbol] = current/global.stopPrice[symbol];
                 }
@@ -135,10 +134,10 @@ function market_Buy(symbol, symbolPrice, orderPercent){
     let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/symbolPrice, stepSize));
     if(execQuantity > global.filters[symbol].minQty) {
         /* Market sell buy */
-        // binance.marketBuy(symbol, execQuantity, (error, response) => {
-        //     if(error) {console.log(error)};
-        //     console.log(response);
-        // });
+        binance.marketBuy(symbol, execQuantity, (error, response) => {
+            if(error) {console.log(error)};
+            console.log(response);
+        });
     }
 }
 
@@ -147,10 +146,10 @@ function market_Sell(symbol){
     let execQuantity = parseFloat(FixedToDown(global.balance[symbol.replace('USDT','')].available, stepSize));
     if(execQuantity > global.filters[symbol].minQty){
         /* Market sell order */
-        // binance.marketSell(symbol, execQuantity, (error, response)=>{
-        //     if(error) {console.log(error);}
-        //     console.log(response);
-        // });
+        binance.marketSell(symbol, execQuantity, (error, response)=>{
+            if(error) {console.log(error);}
+            console.log(response);
+        });
     }
 }
 subscribe();
@@ -473,7 +472,7 @@ binance.exchangeInfo(function(error, data) {
  * @param {*} fixedTo numbers after dot to cut off
  */
 function FixedToDown(val, fixedTo){
-    let result = val.toString().substring(0, val.toString().indexOf(".") + fixedTo);
+    let result = Math.floor(val*Math.pow(10, fixedTo))/Math.pow(10, fixedTo);
     return result;
 }
 function isEmpty(obj) {
