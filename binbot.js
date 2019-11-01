@@ -135,10 +135,10 @@ function market_Buy(symbol, symbolPrice, orderPercent){
     let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/symbolPrice, stepSize));
     if(execQuantity > global.filters[symbol].minQty) {
         /* Market sell buy */
-        binance.marketBuy(symbol, execQuantity, (error, response) => {
-            if(error) {console.log(error)};
-            console.log(response);
-        });
+        // binance.marketBuy(symbol, execQuantity, (error, response) => {
+        //     if(error) {console.log(error)};
+        //     console.log(response);
+        // });
     }
 }
 
@@ -147,10 +147,10 @@ function market_Sell(symbol){
     let execQuantity = parseFloat(FixedToDown(global.balance[symbol.replace('USDT','')].available, stepSize));
     if(execQuantity > global.filters[symbol].minQty){
         /* Market sell order */
-        binance.marketSell(symbol, execQuantity, (error, response)=>{
-            if(error) {console.log(error);}
-            console.log(response);
-        });
+        // binance.marketSell(symbol, execQuantity, (error, response)=>{
+        //     if(error) {console.log(error);}
+        //     console.log(response);
+        // });
     }
 }
 subscribe();
@@ -403,7 +403,6 @@ function getOrderWithDate(){
             global.statistics[pair].usdtProfit = sum;
             global.statistics[pair].orderCounts = orderCount;
             global.totalUsdtProfit += sum;
-            // console.log(`${pair}:${sum}`);
         });
     }
     for (let pair of usePairs){
@@ -436,7 +435,7 @@ function allOrders(symbol){
     });
 }
 
-/** 
+/**
 * Get exchange info for symbols like to meet order requirements
 * minQty = minimum order quantity
 * minNotional = minimum order value (price * quantity) 
