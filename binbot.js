@@ -126,7 +126,7 @@ setInterval(() => {
         // console.log(global.symbolPrices);
         // console.log(global.totalUsdtd);
     });
-}, 10000);
+}, 30000);
 
 function market_Buy(symbol, symbolPrice, orderPercent){
     let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*orderPercent;
