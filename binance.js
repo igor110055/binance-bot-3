@@ -1,6 +1,7 @@
 const express = require('express');
 const BinanceBot = require('./binbot.js');
-const {insertUser} = require('./database');
+const {insertUser, getUsers} = require('./database');
+const axios = require('axios');
 // require('./binbotclass.js');
 require('dotenv').config();
 require('log-timestamp');
@@ -168,6 +169,45 @@ app.post('/add_user', (req, res) => {
             result: err
         }));
     })
+});
+
+app.get('/bots-list', (req, res)=>{
+    if(process.env.BOT_NAME == 'main'){
+        let{pageSize, currentPage, orderBy, search} = req.query;
+        getUsers(pageSize, currentPage, orderBy, search).then(paginator=>{
+            res.json(apiResponse({
+                result: paginator
+            }));
+        }).catch(err=>{
+            console.log(err);
+        });
+    }else{
+        res.json(apiResponse({
+            result: 'Not allowed'
+        }));
+    }
+});
+
+app.get('/binance_keys', (req, res)=>{
+    if(!process.env.BEAR_TOKEN){
+        res.json(apiResponse({
+            result: "No Bear Token Found"
+        }));
+    }else{
+        try{
+            axios.post('https://moontrades.io/api/read/binance/keys',{
+                api_token: process.env.BEAR_TOKEN
+            }).then((response)=>{
+                res.json(apiResponse({
+                    result: response.data
+                }));
+              }).catch(error=>{
+                  console.log(error);
+              });
+        }catch(err){
+            console.log(err);
+        }
+    }
 });
 
 app.get('/uptime', (req, res) => {

@@ -1,4 +1,6 @@
 const knex = require('knex')(require('./knexfile'));
+const setupPaginator = require('knex-paginator');
+setupPaginator(knex);
 
 const insertUser = function insertUser (user) {
     return knex('users').insert(user);
@@ -9,6 +11,22 @@ const updateUser = function updateUser (apiKey, user) {
         .where({apiKey})
         .update(user);
 };
+
+const getUsers = function getUsers(perPage, currentPage, orderBy = 'id', search){
+    let query = knex
+            .select('*')
+            .from('users');
+    if(orderBy){
+        query = query.orderBy(orderBy, 'asc');
+    }
+    if(search){
+        query = query.where('accountName', 'like', `%${search}%`).orWhere('accountEmail', 'like', `%${search}%`);
+    }
+    if(perPage && currentPage){
+        query = query.paginate(perPage, currentPage, true);
+    }
+    return query;
+}
 
 const truncateUsers = function truncateUsers () {
     return knex('users').truncate();
@@ -153,6 +171,7 @@ module.exports.knex = knex;
 module.exports.insertUser = insertUser;
 module.exports.updateUser = updateUser;
 module.exports.truncateUsers = truncateUsers;
+module.exports.getUsers = getUsers;
 module.exports.truncateOrders = truncateOrders;
 module.exports.insertOrder = insertOrder;
 module.exports.getOrder = getOrder;
