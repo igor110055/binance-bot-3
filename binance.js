@@ -1,8 +1,10 @@
 const express = require('express');
 const BinanceBot = require('./binbot.js');
+if(process.env.BOT_NAME == 'main'){
+    const Accounts = require('./account.js');
+}
 const {insertUser, getUsers} = require('./database');
 const axios = require('axios');
-// require('./binbotclass.js');
 require('dotenv').config();
 require('log-timestamp');
 

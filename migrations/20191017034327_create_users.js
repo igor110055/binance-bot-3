@@ -11,6 +11,7 @@ exports.up = function(knex) {
         t.string('accountEmail', 45)
         t.string('serverIP', 45)
         t.integer('port').unsigned()
+        t.string('uptime', 40)
         t.integer('status').unsigned()
     });
 };
