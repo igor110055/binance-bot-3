@@ -301,7 +301,7 @@ function updateOrders(){
                     fillable.executedQty = parseFloat(order.executedQty);
                     fillable.cummulativeQuoteQty = parseFloat(order.cummulativeQuoteQty);
                     fillable.side = order.side;
-                    fillable.price = parseFloat(order.cummulativeQuoteQty)/parseFloat(order.executedQty);
+                    fillable.price = parseFloat(order.cummulativeQuoteQty)/parseFloat(order.origQty);
                     fillable.transactTime = moment.utc(order.time).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
                     insertOrder(fillable)
                         .then()
