@@ -1,9 +1,11 @@
 const express = require('express');
+const moment = require('moment-timezone');
 const BinanceBot = require('./binbot.js');
+const {isEmpty} = require('./binbot.js');
 if(process.env.BOT_NAME == 'main'){
     const Accounts = require('./account.js');
 }
-const {insertUser, getUsers} = require('./database');
+const {insertUser, getUsers, getOrder} = require('./database');
 const axios = require('axios');
 require('dotenv').config();
 require('log-timestamp');
@@ -37,7 +39,7 @@ app.get('/settings', (req, res) => {
     try{
         let result = {};
         result.totalUSDT = global.totalUsdtd;
-        result.currentUSDTBalance = global.balance['USDT'].available;
+        result.currentUSDTBalance = (!isEmpty(global.balance))?global.balance['USDT'].available:0;
         result.totalUSDTProfit = global.totalUsdtProfit;
         result.totalUSDTProfitPercentage = global.totalUsdtProfit/(global.totalUsdtd+Math.abs(global.totalUsdtProfit))*100;
         result.stoploss = process.env.STOP_LOSS;
@@ -56,8 +58,8 @@ app.get('/symbolInfo', (req, res) => {
         res.json(apiResponse({
             result: Object.keys(result).map(key => ({
                 ...result[key],
-                asset: (global.balance) ? global.balance[key.replace('USDT', '')].available : {},
-                assetUsdtValue: global.balance[key.replace('USDT', '')].usdtTotal,
+                asset: (!isEmpty(global.balance)) ? global.balance[key.replace('USDT', '')].available : {},
+                assetUsdtValue: (!isEmpty(global.balance))?global.balance[key.replace('USDT', '')].usdtTotal:0,
                 currentPricePercent: global.currentPercent[key],
                 usdtProfit: result[key].usdtProfit,
                 usdtProfitPercent: (result[key].usdtProfit/Math.abs(global.totalAbsUsdtProfit)*100).toFixed(2)
@@ -107,9 +109,27 @@ app.get('/get_price', (req, res) => {
       });
 });
 
+/* Get orders */
+app.get('/get_order', (req, res)=>{
+    let{apiKey, pair, startTime, endTime, limit} = req.query;
+    if(startTime){
+        startTime = moment(startTime).format('YYYY-MM-DD HH:mm:ss');
+    }
+    if(endTime){
+        endTime = moment(endTime).format('YYYY-MM-DD HH:mm:ss');
+    }
+
+    getOrder(apiKey, pair, startTime, endTime, limit).then(response=>{
+        res.json(apiResponse({
+            result: response
+        }));
+    }).catch(error=>{
+        console.log(error);
+    })
+});
+
 /* Get trade history */
 app.get('/trade_history', (req, res) => {
-    console.log(req.body);
     let {symbol} = req.body;
     // Get price from Binance api
     binance.trades(symbol, (error, trades, symbol) => {

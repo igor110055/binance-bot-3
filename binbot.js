@@ -495,7 +495,7 @@ function isIterable(obj) {
     }
     return typeof obj[Symbol.iterator] === 'function';
 }
-
+exports.isEmpty = isEmpty;
 /* Last Order Response Sample
 VETUSDT:
 { symbol: 'VETUSDT',

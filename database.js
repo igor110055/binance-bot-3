@@ -40,12 +40,17 @@ const insertOrder = function insertOrder (order) {
     return knex('orders').insert(order);
 };
 
-const getOrder = function getOrder(apiKey, symbol, startTime, endTime) {
+const getOrder = function getOrder(apiKey, symbol, startTime, endTime, limit) {
     let query = knex
         .select('*')
         .from('orders')
-        .where('symbol', symbol)
         .orderBy('transactTime', 'desc');
+    if(limit){
+        query = query.limit(limit);
+    }
+    if(symbol){
+        query = query.where('symbol', 'like', `%${symbol}%`);
+    }
     if (startTime)
         query = query.andWhere('transactTime', '>', startTime);
     if (endTime)
