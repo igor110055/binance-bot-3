@@ -70,7 +70,7 @@ setInterval(() => {
                         global.currentStep[symbol] = 2;
                     }
                 }
-                // console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, takeProfit: ${global.takeProfitPrice[symbol]}`);
+                // console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, current:${current} takeProfit: ${global.takeProfitPrice[symbol]}`);
                 if(global.stopPrice[symbol]>0){
                     global.currentPercent[symbol] = current/global.stopPrice[symbol];
                 }
@@ -132,13 +132,23 @@ function market_Buy(symbol, symbolPrice, orderPercent){
     let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*orderPercent;
     let stepSize = Math.abs(Math.log10(global.filters[symbol].stepSize));
     let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/symbolPrice, stepSize));
-    if(execQuantity > global.filters[symbol].minQty) {
-        /* Market sell buy */
-        binance.marketBuy(symbol, execQuantity, (error, response) => {
-            if(error) {console.log(error)};
-            console.log(response);
-        });
+    if(global.balance['USDT'] < perUsdtQuantity){
+        console.log(`USDT Balance is insufficient to buy ${symbol}`);
+        return;
     }
+    if(execQuantity < global.filters[symbol].minQty) {
+        console.log(`ExecQuantity is smaller than filter MinQty`);
+        return;
+    }
+    if(global.finalStep[symbol] >=2){
+        console.log(`Maximum step 2 reached.`);
+        return;
+    }
+    /* Market buy */
+    binance.marketBuy(symbol, execQuantity, (error, response) => {
+        if(error) {console.log(error)};
+        console.log(response);
+    });
 }
 
 function market_Sell(symbol){
@@ -150,6 +160,9 @@ function market_Sell(symbol){
             if(error) {console.log(error);}
             console.log(response);
         });
+    }else{
+        console.log(`Sell Order not permitted.`);
+        console.log(`${symbol} ExecQuantity: ${execQuantity} FilterMinQty: ${global.filters[symbol].minQty}`);
     }
 }
 subscribe();
