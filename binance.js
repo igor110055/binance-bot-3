@@ -19,7 +19,6 @@ app.use((req, res, next) => {
 app.use(express.json());
 const port = +process.env.CONTROL_PORT;
 const usePairs = process.env.PAIRS.replace(/\s/g,'').split(',');
-const repo = `~/binance-${process.env.port}/`;
 
 app.get('/', (req, res) => res.send('server status okay'));
 
@@ -253,7 +252,7 @@ app.get('/uptime', (req, res) => {
 
 app.post('/git_pull', (req, res) => {
     console.log('Push received');
-    exec(`cd ${repo} && git pull`, function(error, stdout, stderr) {
+    exec('./gitpull.sh', function(error, stdout, stderr) {
         // Log success in some manner
         console.log('exec complete', error, stdout, stderr);
         res.json({
