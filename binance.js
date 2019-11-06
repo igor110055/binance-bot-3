@@ -256,6 +256,7 @@ app.post('/git_pull', (req, res) => {
         // Log success in some manner
         console.log('exec complete', error, stdout, stderr);
         res.json({
+        port: process.env.CONTROL_PORT,
         error: error,
         stdout: stdout,
         stderr: stderr
