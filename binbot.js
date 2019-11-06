@@ -137,7 +137,7 @@ function market_Buy(symbol, symbolPrice, orderPercent){
         return;
     }
     if(execQuantity < global.filters[symbol].minQty) {
-        console.log(`ExecQuantity is smaller than filter MinQty`);
+        console.log(`ExecQuantity is smaller than filter MinQty.`);
         return;
     }
     if(global.finalStep[symbol] >=2){
