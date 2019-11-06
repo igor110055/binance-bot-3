@@ -4,6 +4,6 @@ current=$(basename "$(pwd)")
 echo "${current}"
 cd "$(dirname "$0")"
 git pull \
-&& echo "Forever restarting.." \
-&& forever restart "${current}" \
-&& echo "Forever restarted." \
+&& echo "Forever restarting.."
+&& forever restart "${current}"
+&& echo "Forever restarted."
