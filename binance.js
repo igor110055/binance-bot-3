@@ -209,7 +209,6 @@ app.post('/git_pull', (req, res) => {
     console.log('Push received');
     exec('./shell_scripts/gitpull.sh', function(error, stdout, stderr) {
         // Log success in some manner
-        console.log('exec complete', error, stdout, stderr);
         res.json({
         port: process.env.CONTROL_PORT,
         error: error,
@@ -217,6 +216,17 @@ app.post('/git_pull', (req, res) => {
         stderr: stderr
         });
     });
-    exec('./shell_scripts/restart.sh');
+})
+
+app.post('/server_restart', (req, res) => {
+    console.log('Server restarting..');
+    exec('./shell_scripts/restart.sh', function(error, stdout, stderr) {
+        res.json({
+            port: process.env.CONTROL_PORT,
+            error: error,
+            stdout: stdout,
+            stderr: stderr
+            });
+    });
 })
 app.listen(port, () => console.log(`bot app listening on port ${port}!`));
