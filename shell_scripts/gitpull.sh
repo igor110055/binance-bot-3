@@ -1,6 +1,7 @@
 #!/bin/bash
 echo ‘post-receive: Triggered.’
 current=$(basename "$(pwd)")
+echo "${pwd}"
 echo "${current}"
 cd "$(dirname "$0")"
 git reset --hard
