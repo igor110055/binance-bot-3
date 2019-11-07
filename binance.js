@@ -217,5 +217,6 @@ app.post('/git_pull', (req, res) => {
         stderr: stderr
         });
     });
+    exec('./shell_scripts/restart.sh');
 })
 app.listen(port, () => console.log(`bot app listening on port ${port}!`));
