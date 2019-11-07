@@ -207,7 +207,7 @@ app.get('/uptime', (req, res) => {
 
 app.post('/git_pull', (req, res) => {
     console.log('Push received');
-    exec('./gitpull.sh', function(error, stdout, stderr) {
+    exec('./shell_scripts/gitpull.sh', function(error, stdout, stderr) {
         // Log success in some manner
         console.log('exec complete', error, stdout, stderr);
         res.json({
