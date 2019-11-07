@@ -3,9 +3,6 @@ var exec = require('child_process').exec;
 const moment = require('moment-timezone');
 const BinanceBot = require('./binbot.js');
 const {isEmpty} = require('./binbot.js');
-if(process.env.BOT_NAME == 'main'){
-    const Accounts = require('./account.js');
-}
 const {insertUser, getUsers, getOrder} = require('./database');
 const axios = require('axios');
 require('dotenv').config();
@@ -192,23 +189,6 @@ app.post('/add_user', (req, res) => {
             result: err
         }));
     })
-});
-
-app.get('/bots-list', (req, res)=>{
-    if(process.env.BOT_NAME == 'main'){
-        let{pageSize, currentPage, orderBy, search} = req.query;
-        getUsers(pageSize, currentPage, orderBy, search).then(paginator=>{
-            res.json(apiResponse({
-                result: paginator
-            }));
-        }).catch(err=>{
-            console.log(err);
-        });
-    }else{
-        res.json(apiResponse({
-            result: 'Not allowed'
-        }));
-    }
 });
 
 app.get('/binance_keys', (req, res)=>{
