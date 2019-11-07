@@ -3,7 +3,7 @@ var exec = require('child_process').exec;
 const moment = require('moment-timezone');
 const BinanceBot = require('./binbot.js');
 const {isEmpty} = require('./binbot.js');
-const {insertUser, getUsers, getOrder} = require('./database');
+const {getOrder} = require('./database');
 const axios = require('axios');
 require('dotenv').config();
 require('log-timestamp');
@@ -164,31 +164,6 @@ app.post('/market_order', (req, res) => {
             }));
           });
     }
-});
-
-app.post('/add_user', (req, res) => {
-    let {api_key, secret_key, is_master, master_api_key, account_id, account_name, account_email, server_IP, port, status} = req.body;
-    let fillable = {};
-    fillable.apiKey = api_key;
-    fillable.secretKey = secret_key;
-    fillable.isMaster = is_master;
-    fillable.masterApiKey = master_api_key;
-    fillable.accountId = account_id;
-    fillable.accountName = account_name;
-    fillable.accountEmail = account_email;
-    fillable.serverIP = server_IP;
-    fillable.port = port;
-    fillable.status = status;
-    insertUser(fillable).then(resp=>{
-        console.log(`New User Added. ${resp}`);
-        res.json(apiResponse({
-            result: resp
-        }));
-    }).catch(err=>{
-        res.json(apiResponse({
-            result: err
-        }));
-    })
 });
 
 app.get('/binance_keys', (req, res)=>{
