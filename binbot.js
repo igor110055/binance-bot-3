@@ -70,7 +70,7 @@ setInterval(() => {
                         global.currentStep[symbol] = 2;
                     }
                 }
-                // console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, current:${current} takeProfit: ${global.takeProfitPrice[symbol]}`);
+                console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, current:${current} takeProfit: ${global.takeProfitPrice[symbol]}`);
                 if(global.stopPrice[symbol]>0){
                     global.currentPercent[symbol] = current/global.stopPrice[symbol];
                 }
@@ -116,17 +116,17 @@ setInterval(() => {
     /* Update cummulativeSum and executedSum */
     finalStep();
     /* Update balances */
-    binance.prices((error, ticker) => {
-        if ( error ) console.error(error);
-        for ( let symbol in ticker ) {
-            if(!usePairs.includes(symbol)) continue;
-            global.symbolPrices[symbol] = parseFloat(ticker[symbol]);
-        }
-        // useBalance();
-        // console.log(global.symbolPrices);
-        // console.log(global.totalUsdtd);
-    });
-}, 40000);
+    // binance.prices((error, ticker) => {
+    //     if ( error ) console.error(error);
+    //     for ( let symbol in ticker ) {
+    //         if(!usePairs.includes(symbol)) continue;
+    //         global.symbolPrices[symbol] = parseFloat(ticker[symbol]);
+    //     }
+    //     // useBalance();
+    //     // console.log(global.symbolPrices);
+    //     // console.log(global.totalUsdtd);
+    // });
+}, 10000);
 
 function market_Buy(symbol, symbolPrice, orderPercent){
     let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*orderPercent;
@@ -145,10 +145,10 @@ function market_Buy(symbol, symbolPrice, orderPercent){
         return;
     }
     /* Market buy */
-    binance.marketBuy(symbol, execQuantity, (error, response) => {
-        if(error) {console.log(error)};
-        console.log(response);
-    });
+    // binance.marketBuy(symbol, execQuantity, (error, response) => {
+    //     if(error) {console.log(error)};
+    //     console.log(response);
+    // });
 }
 
 function market_Sell(symbol){
@@ -156,10 +156,10 @@ function market_Sell(symbol){
     let execQuantity = parseFloat(FixedToDown(global.balance[symbol.replace('USDT','')].available, stepSize));
     if(execQuantity > global.filters[symbol].minQty){
         /* Market sell order */
-        binance.marketSell(symbol, execQuantity, (error, response)=>{
-            if(error) {console.log(error);}
-            console.log(response);
-        });
+        // binance.marketSell(symbol, execQuantity, (error, response)=>{
+        //     if(error) {console.log(error);}
+        //     console.log(response);
+        // });
     }else{
         console.log(`Sell Order not permitted.`);
         console.log(`${symbol} ExecQuantity: ${execQuantity} FilterMinQty: ${global.filters[symbol].minQty}`);
@@ -393,59 +393,59 @@ function finalStep(){
     }
 }
 
-function getOrderWithDate(){
-    let aYearAgo = moment(Date.now()).tz("Europe/Berlin").subtract(1,'y').format('YYYY-MM-DD HH:mm:ss');
-    let aWeekAgo = moment(Date.now()).tz("Europe/Berlin").subtract(3,'d').format('YYYY-MM-DD HH:mm:ss');
-    let aWeekAfterAgo = moment(Date.now()).tz("Europe/Berlin").subtract(3,'d').format('YYYY-MM-DD HH:mm:ss');
-    let current = moment(Date.now()).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
-    for (let pair of usePairs){
-        getOrder(process.env.API_KEY, pair, aYearAgo, aWeekAgo).then(orders=>{
-            let orderCount = 0;
-            let sum = 0;
-            for (let order of orders){
-                if(order.side == 'BUY'){
-                    sum -= parseFloat(order.cummulativeQuoteQty)+parseFloat(order.cummulativeQuoteQty)*0.001;
-                }else if(order.side == 'SELL'){
-                    sum += parseFloat(order.cummulativeQuoteQty)-parseFloat(order.cummulativeQuoteQty)*0.001;
-                }
-                orderCount += 1;
-            }
-            sum = sum+global.balance[pair.replace('USDT', '')].usdtTotal;
-            global.statistics[pair].symbol = pair;
-            global.statistics[pair].usdtProfit = sum;
-            global.statistics[pair].orderCounts = orderCount;
-            global.totalUsdtProfit += sum;
-        });
-    }
-    for (let pair of usePairs){
-        getOrder(process.env.API_KEY, pair, aWeekAfterAgo).then(orders=>{
-            let orderCount = 0;
-            let sum = 0;
-            for (let order of orders){
-                if(order.side == 'BUY'){
-                    sum -= parseFloat(order.cummulativeQuoteQty)+parseFloat(order.cummulativeQuoteQty)*0.001;
-                }else if(order.side == 'SELL'){
-                    sum += parseFloat(order.cummulativeQuoteQty)-parseFloat(order.cummulativeQuoteQty)*0.001;
-                }
-                orderCount += 1;
-            }
-            sum = sum+global.balance[pair.replace('USDT', '')].usdtTotal;
-            global.statistics[pair].symbol = pair;
-            global.statistics[pair].usdtProfit = sum;
-            global.statistics[pair].orderCounts = orderCount;
-            global.totalUsdtProfit += sum;
-        });
-    }
-}
+// function getOrderWithDate(){
+//     let aYearAgo = moment(Date.now()).tz("Europe/Berlin").subtract(1,'y').format('YYYY-MM-DD HH:mm:ss');
+//     let aWeekAgo = moment(Date.now()).tz("Europe/Berlin").subtract(3,'d').format('YYYY-MM-DD HH:mm:ss');
+//     let aWeekAfterAgo = moment(Date.now()).tz("Europe/Berlin").subtract(3,'d').format('YYYY-MM-DD HH:mm:ss');
+//     let current = moment(Date.now()).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
+//     for (let pair of usePairs){
+//         getOrder(process.env.API_KEY, pair, aYearAgo, aWeekAgo).then(orders=>{
+//             let orderCount = 0;
+//             let sum = 0;
+//             for (let order of orders){
+//                 if(order.side == 'BUY'){
+//                     sum -= parseFloat(order.cummulativeQuoteQty)+parseFloat(order.cummulativeQuoteQty)*0.001;
+//                 }else if(order.side == 'SELL'){
+//                     sum += parseFloat(order.cummulativeQuoteQty)-parseFloat(order.cummulativeQuoteQty)*0.001;
+//                 }
+//                 orderCount += 1;
+//             }
+//             sum = sum+global.balance[pair.replace('USDT', '')].usdtTotal;
+//             global.statistics[pair].symbol = pair;
+//             global.statistics[pair].usdtProfit = sum;
+//             global.statistics[pair].orderCounts = orderCount;
+//             global.totalUsdtProfit += sum;
+//         });
+//     }
+//     for (let pair of usePairs){
+//         getOrder(process.env.API_KEY, pair, aWeekAfterAgo).then(orders=>{
+//             let orderCount = 0;
+//             let sum = 0;
+//             for (let order of orders){
+//                 if(order.side == 'BUY'){
+//                     sum -= parseFloat(order.cummulativeQuoteQty)+parseFloat(order.cummulativeQuoteQty)*0.001;
+//                 }else if(order.side == 'SELL'){
+//                     sum += parseFloat(order.cummulativeQuoteQty)-parseFloat(order.cummulativeQuoteQty)*0.001;
+//                 }
+//                 orderCount += 1;
+//             }
+//             sum = sum+global.balance[pair.replace('USDT', '')].usdtTotal;
+//             global.statistics[pair].symbol = pair;
+//             global.statistics[pair].usdtProfit = sum;
+//             global.statistics[pair].orderCounts = orderCount;
+//             global.totalUsdtProfit += sum;
+//         });
+//     }
+// }
 
-function allOrders(symbol){ 
-    binance.allOrders(symbol, (error, orders, symbol) => {
-        if(error) console.log(error.body);
-        // console.log(orders);
-        /* Store all orders */
-        global.orders[symbol] = orders;
-    });
-}
+// function allOrders(symbol){ 
+//     binance.allOrders(symbol, (error, orders, symbol) => {
+//         if(error) console.log(error.body);
+//         // console.log(orders);
+//         /* Store all orders */
+//         global.orders[symbol] = orders;
+//     });
+// }
 
 /**
 * Get exchange info for symbols like to meet order requirements
