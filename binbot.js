@@ -1,6 +1,6 @@
 const moment = require('moment-timezone');
 const {truncateOrders, insertOrder, getOrder} = require('./database');
-
+const {postMessage} = require('./discord.js');
 require('dotenv').config();
 
 const binance = require( './node-binance-api' )().options({
@@ -17,24 +17,25 @@ global.ticker = {};
 global.balance ={};
 global.totalUsdtd = 0;
 global.symbolPrices = {};
-global.orderFilled ={};
+global.orderFilled = {};
 global.lastOrder = {};
 global.orders = {};
 global.symbolInfo = {};
 global.filters ={};
-global.usdtProfit={};
-global.totalUsdtProfit =0;
-global.totalAbsUsdtProfit =0;
+global.usdtProfit= {};
+global.totalUsdtProfit = 0;
+global.totalAbsUsdtProfit = 0;
 global.statistics = {};
 global.currentStep = {};
 global.currentPercent = {};
-global.cummulativeSum ={};
+global.cummulativeSum = {};
 global.executedSum = {};
 global.finalStep = {};
-global.priceAverage={};
-global.stopPrice={};
+global.priceAverage= {};
+global.stopPrice= {};
+global.entryTime = {};
 for(let pair of usePairs){
-    global.statistics[pair] ={};
+    global.statistics[pair] = {};
     global.currentStep[pair] = 0;
     global.stopPrice[pair] = 0;
 }
@@ -78,6 +79,7 @@ setInterval(() => {
                     // Do step 0
                     console.log(`${symbol}: Do step 0 BUY`);
                     global.stopPrice[symbol] = current;
+                    global.entryTime[symbol] = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
                     global.priceAverage[symbol] = current;
                     market_Buy(symbol, current, lossSteps[0].orderPercent);
                     global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
@@ -90,6 +92,7 @@ setInterval(() => {
                     let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*lossSteps[1].orderPercent;
                     let stepSize = Math.abs(Math.log10(global.filters[symbol].stepSize));
                     let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/current, stepSize));
+                    global.entryTime[symbol] = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
                     global.priceAverage[symbol] = (global.cummulativeSum[symbol]+perUsdtQuantity)/(global.executedSum[symbol]+execQuantity);
                     global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
                     global.currentStep[symbol] = 2;
@@ -99,14 +102,14 @@ setInterval(() => {
                     global.currentStep[symbol] = 0;
                     global.stopPrice[symbol] = 0;
                     global.currentPercent[symbol] = 0;
-                    market_Sell(symbol);
+                    market_Sell(symbol, current);
                 }else if(global.currentStep[symbol]>0 && current>=global.takeProfitPrice[symbol]){
                     /* Market sell */
                     console.log(`${symbol}: Take profit SELL`);
                     global.currentStep[symbol] = 0;
                     global.stopPrice[symbol] = 0;
                     global.currentPercent[symbol] = 0;
-                    market_Sell(symbol);
+                    market_Sell(symbol, current);
                 }
             }
         }
@@ -115,18 +118,7 @@ setInterval(() => {
     getAllOrders();
     /* Update cummulativeSum and executedSum */
     finalStep();
-    /* Update balances */
-    // binance.prices((error, ticker) => {
-    //     if ( error ) console.error(error);
-    //     for ( let symbol in ticker ) {
-    //         if(!usePairs.includes(symbol)) continue;
-    //         global.symbolPrices[symbol] = parseFloat(ticker[symbol]);
-    //     }
-    //     // useBalance();
-    //     // console.log(global.symbolPrices);
-    //     // console.log(global.totalUsdtd);
-    // });
-}, 40000);
+}, 50000);
 
 function market_Buy(symbol, symbolPrice, orderPercent){
     let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*orderPercent;
@@ -151,7 +143,7 @@ function market_Buy(symbol, symbolPrice, orderPercent){
     });
 }
 
-function market_Sell(symbol){
+function market_Sell(symbol, symbolPrice){
     let stepSize = Math.abs(Math.log10(global.filters[symbol].stepSize));
     let execQuantity = parseFloat(FixedToDown(global.balance[symbol.replace('USDT','')].available, stepSize));
     if(execQuantity > global.filters[symbol].minQty){
@@ -160,6 +152,19 @@ function market_Sell(symbol){
             if(error) {console.log(error);}
             console.log(response);
         });
+        if(process.env.DISCORD_URL && process.env.BOT_NAME == 'main'){
+            const msg = `\n\n\n`
+            + `Name: Binance Bot\n`
+            + `Pair: ${symbol}\n`
+            + `Entry Price: ${global.priceAverage[symbol]}\n`
+            + `Exit Price: ${symbolPrice}\n`
+            + `Opened at ${global.entryTime[symbol]} (UTC +2)\n`
+            + `Closed at ${moment
+                .utc(Date.now())
+                .tz('Europe/Berlin')
+                .format('YYYY-MM-DD HH:mm:ss')} (UTC +2)\n`;
+            postMessage(msg);
+        }
     }else{
         console.log(`Sell Order not permitted.`);
         console.log(`${symbol} ExecQuantity: ${execQuantity} FilterMinQty: ${global.filters[symbol].minQty}`);
@@ -294,6 +299,7 @@ function execution_update(data) {
 }
 binance.websockets.userData(balance_update, execution_update);
 
+/* Update database orders table from binance order history */
 function updateOrders(){
     truncateOrders().then(() => {
         console.log('truncated orders table');
@@ -375,9 +381,13 @@ function finalStep(){
             let orderOrigQty='';
             let cummulativeSum= 0;
             let executedSum = 0;
+            let transactTime = '';
             for(let order of orders){
                 if(order.side == 'SELL') break;
                 stopPrice = order.price;
+                if(transactTime.length == 0){
+                    transactTime = order.transactTime;
+                }
                 cummulativeSum += order.cummulativeQuoteQty;
                 executedSum += order.executedQty;
                 if(orderOrigQty == order.origQty) continue;
@@ -389,6 +399,9 @@ function finalStep(){
             global.priceAverage[pair] = cummulativeSum/executedSum; 
             global.finalStep[pair] = step;
             global.stopPrice[pair] = stopPrice;
+            if(transactTime.length != 0){
+                global.entryTime[pair] = moment(transactTime).format('YYYY-MM-DD HH:mm:ss');
+            }
         });
     }
 }
