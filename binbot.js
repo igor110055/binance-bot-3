@@ -3,10 +3,12 @@ const {truncateOrders, insertOrder, getOrder} = require('./database');
 const {postMessage} = require('./discord.js');
 require('dotenv').config();
 
+
 const binance = require( './node-binance-api' )().options({
     APIKEY: process.env.API_KEY,
     APISECRET: process.env.API_SECRET,
     recvWindow: 6000,
+    verbose:true,
     useServerTime: true, // If you get timestamp errors, synchronize to server time at startup
   });
 

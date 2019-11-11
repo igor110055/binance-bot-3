@@ -30,6 +30,7 @@ function apiResponse(data, stat = true) {
 const binance = require('./node-binance-api')().options({
     APIKEY: process.env.API_KEY,
     APISECRET: process.env.API_SECRET,
+    verbose:true,
     useServerTime: true // If you get timestamp errors, synchronize to server time at startup
   });
 
