@@ -47,7 +47,7 @@ global.takeProfitPrice = {};
 
 setInterval(() => {
     binance.prevDay(false, (error, response) => {
-        if (error) console.log(error);
+        if (error) console.log(error.body);
         if(isIterable(response)){
             for (let obj of response){
                 let symbol = obj.symbol;
@@ -138,7 +138,7 @@ function market_Buy(symbol, symbolPrice, orderPercent){
     }
     /* Market buy */
     binance.marketBuy(symbol, execQuantity, (error, response) => {
-        if(error) {console.log(error)};
+        if(error) {console.log(error.body)};
         console.log(response);
     });
 }
@@ -149,7 +149,7 @@ function market_Sell(symbol, symbolPrice){
     if(execQuantity > global.filters[symbol].minQty){
         /* Market sell order */
         binance.marketSell(symbol, execQuantity, (error, response)=>{
-            if(error) {console.log(error);}
+            if(error) {console.log(error.body);}
             console.log(response);
         });
         if(process.env.DISCORD_URL && process.env.BOT_NAME == 'main'){
@@ -178,7 +178,7 @@ function subscribe(){
     updateOrders();
     lastOrder();
     binance.prices((error, ticker) => {
-        if ( error ) console.error(error);
+        if ( error ) console.log(error.body);
         for ( let symbol in ticker ) {
             if(!usePairs.includes(symbol)) continue;
             global.symbolPrices[symbol] = parseFloat(ticker[symbol]);
@@ -193,7 +193,7 @@ function subscribe(){
 function useBalance(){
     binance.balance(function (error, balances) {
         try{
-            if (error) console.log(error);
+            if (error) console.log(error.body);
             let usdt = 0.00;
             /* Get symbol Price */
             if(isEmpty(balances) == false){
@@ -225,7 +225,7 @@ function useBalance(){
             }
             // console.log(global.balance);
         }catch(error){
-            console.log(error);
+            console.log(error.body);
         }
     });
 }
@@ -234,7 +234,7 @@ function useBalance(){
 function balance_update(data) {
     console.log("Balance Update");
     binance.prices((error, ticker) => {
-        if ( error ) console.error(error);
+        if ( error ) console.error(error.body);
         for ( let symbol in ticker ) {
             if(!usePairs.includes(symbol)) continue;
             global.symbolPrices[symbol] = parseFloat(ticker[symbol]);
@@ -294,7 +294,7 @@ function execution_update(data) {
             global.orderFilled[symbol] = fillable;
             insertOrder(fillable)
             .then(result=>{console.log(result);})
-            .catch((error)=> console.log(error));
+            .catch((error)=> console.log(error.body));
             console.log(`${symbol} : Market Order ${side} Placed.`);
             // console.log(global.orderFilled[symbol]);
         }
@@ -326,7 +326,7 @@ function updateOrders(){
                     fillable.transactTime = moment.utc(order.time).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
                     insertOrder(fillable)
                         .then()
-                        .catch((error)=> console.log(error));
+                        .catch((error)=> console.log(error.body));
                 });
             }
         });
