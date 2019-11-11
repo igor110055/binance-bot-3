@@ -118,7 +118,7 @@ setInterval(() => {
     getAllOrders();
     /* Update cummulativeSum and executedSum */
     finalStep();
-}, 50000);
+}, 10000);
 
 function market_Buy(symbol, symbolPrice, orderPercent){
     let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*orderPercent;
@@ -153,8 +153,10 @@ function market_Sell(symbol, symbolPrice){
             console.log(response);
         });
         if(process.env.DISCORD_URL && process.env.BOT_NAME == 'main'){
-            const msg = `\n\n\n`
+            let profitPercent = (symbolPrice-global.priceAverage[symbol])/global.priceAverage[symbol]*100;
+            const msg = `-----------------------\n`
             + `Name: Binance Bot\n`
+            + `PnL: ${profitPercent.toFixed(2)}%\n`
             + `Pair: ${symbol}\n`
             + `Entry Price: ${global.priceAverage[symbol]}\n`
             + `Exit Price: ${symbolPrice}\n`
