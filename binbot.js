@@ -118,7 +118,7 @@ setInterval(() => {
     getAllOrders();
     /* Update cummulativeSum and executedSum */
     finalStep();
-}, 10000);
+}, 30000);
 
 function market_Buy(symbol, symbolPrice, orderPercent){
     let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*orderPercent;
