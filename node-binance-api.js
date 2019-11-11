@@ -1083,7 +1083,7 @@ let api = function Binance() {
             if (typeof Binance.options.log === 'undefined') Binance.options.log = default_options.log;
             if (typeof Binance.options.verbose === 'undefined') Binance.options.verbose = default_options.verbose;
             if (Binance.options.useServerTime) {
-                apiRequest(base + 'v1/time', {}, function (error, response) {
+                apiRequest(base + 'v3/time', {}, function (error, response) {
                     Binance.info.timeOffset = response.serverTime - new Date().getTime();
                     //Binance.options.log("server time set: ", response.serverTime, Binance.info.timeOffset);
                     if (callback) callback();
@@ -1251,7 +1251,7 @@ let api = function Binance() {
         * @return {undefined}
         */
         depth: function (symbol, callback, limit = 100) {
-            publicRequest(base + 'v1/depth', { symbol: symbol, limit: limit }, function (error, data) {
+            publicRequest(base + 'v3/depth', { symbol: symbol, limit: limit }, function (error, data) {
                 return callback.call(this, error, depthData(data), symbol);
             });
         },
@@ -1342,7 +1342,7 @@ let api = function Binance() {
         */
         prevDay: function (symbol, callback) {
             let input = symbol ? { symbol: symbol } : {};
-            publicRequest(base + 'v1/ticker/24hr', input, function (error, data) {
+            publicRequest(base + 'v3/ticker/24hr', input, function (error, data) {
                 if (callback) return callback.call(this, error, data, symbol);
             });
         },
@@ -1353,7 +1353,7 @@ let api = function Binance() {
         * @return {undefined}
         */
         exchangeInfo: function (callback) {
-            publicRequest(base + 'v1/exchangeInfo', {}, callback);
+            publicRequest(base + 'v3/exchangeInfo', {}, callback);
         },
         /**
         * Gets the dust log for user
@@ -1491,7 +1491,7 @@ let api = function Binance() {
         * @return {undefined}
         */
         useServerTime: function (callback = false) {
-            apiRequest(base + 'v1/time', {}, function (error, response) {
+            apiRequest(base + 'v3/time', {}, function (error, response) {
                 Binance.info.timeOffset = response.serverTime - new Date().getTime();
                 //Binance.options.log("server time set: ", response.serverTime, Binance.info.timeOffset);
                 if (callback) callback();
@@ -1504,7 +1504,7 @@ let api = function Binance() {
         * @return {undefined}
         */
         time: function (callback) {
-            apiRequest(base + 'v1/time', {}, callback);
+            apiRequest(base + 'v3/time', {}, callback);
         },
 
         /**
@@ -1516,7 +1516,7 @@ let api = function Binance() {
         */
         aggTrades: function (symbol, options = {}, callback = false) { //fromId startTime endTime limit
             let parameters = Object.assign({ symbol }, options);
-            marketRequest(base + 'v1/aggTrades', parameters, callback);
+            marketRequest(base + 'v3/aggTrades', parameters, callback);
         },
 
         /**
@@ -1527,7 +1527,7 @@ let api = function Binance() {
         * @return {undefined}
         */
         recentTrades: function (symbol, callback, limit = 500) {
-            marketRequest(base + 'v1/trades', { symbol: symbol, limit: limit }, callback);
+            marketRequest(base + 'v3/trades', { symbol: symbol, limit: limit }, callback);
         },
 
         /**
@@ -1541,7 +1541,7 @@ let api = function Binance() {
         historicalTrades: function (symbol, callback, limit = 500, fromId = false) {
             let parameters = { symbol: symbol, limit: limit };
             if (fromId) parameters.fromId = fromId;
-            marketRequest(base + 'v1/historicalTrades', parameters, callback);
+            marketRequest(base + 'v3/historicalTrades', parameters, callback);
         },
 
         /**
@@ -1597,7 +1597,7 @@ let api = function Binance() {
         candlesticks: function (symbol, interval = '5m', callback = false, options = { limit: 500 }) {
             if (!callback) return;
             let params = Object.assign({ symbol: symbol, interval: interval }, options);
-            publicRequest(base + 'v1/klines', params, function (error, data) {
+            publicRequest(base + 'v3/klines', params, function (error, data) {
                 return callback.call(this, error, data, symbol);
             });
         },
@@ -1651,11 +1651,11 @@ let api = function Binance() {
                 let reconnect = function () {
                     if (Binance.options.reconnect) userData(callback, execution_callback, subscribed_callback);
                 };
-                apiRequest(base + 'v1/userDataStream', {}, function (error, response) {
+                apiRequest(base + 'v3/userDataStream', {}, function (error, response) {
                     Binance.options.listenKey = response.listenKey;
                     setTimeout(function userDataKeepAlive() { // keepalive
                         try {
-                            apiRequest(base + 'v1/userDataStream?listenKey=' + Binance.options.listenKey, {}, function (err) {
+                            apiRequest(base + 'v3/userDataStream?listenKey=' + Binance.options.listenKey, {}, function (err) {
                                 if (err) setTimeout(userDataKeepAlive, 60000); // retry in 1 minute
                                 else setTimeout(userDataKeepAlive, 60 * 30 * 1000); // 30 minute keepalive
                             }, 'PUT');
@@ -1783,7 +1783,7 @@ let api = function Binance() {
 
                 let getSymbolDepthSnapshot = function (symbol, cb) {
 
-                    publicRequest(base + 'v1/depth', { symbol: symbol, limit: limit }, function (error, json) {
+                    publicRequest(base + 'v3/depth', { symbol: symbol, limit: limit }, function (error, json) {
                         if (error) {
                             return cb(error, null);
                         }
@@ -1972,7 +1972,7 @@ let api = function Binance() {
                 };
 
                 let getSymbolKlineSnapshot = function (symbol, limit = 500) {
-                    publicRequest(base + 'v1/klines', { symbol: symbol, interval: interval, limit: limit }, function (error, data) {
+                    publicRequest(base + 'v3/klines', { symbol: symbol, interval: interval, limit: limit }, function (error, data) {
                         klineData(symbol, interval, data);
                         //Binance.options.log('/klines at ' + Binance.info[symbol][interval].timestamp);
                         if (typeof Binance.klineQueue[symbol][interval] !== 'undefined') {
