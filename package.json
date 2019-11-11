@@ -21,7 +21,7 @@
     "ws": "^4.1.0"
   },
   "scripts": {
-    "start": "export socks_proxy=socks://163.172.111.11:1927 && node binance.js",
+    "start": "node binance.js",
     "dev": "nodemon binance.js",
     "test": "mocha",
     "test-debug": "mocha --inspect-brk",
