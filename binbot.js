@@ -171,7 +171,10 @@ function market_Sell(symbol, symbolPrice){
         console.log(`${symbol} ExecQuantity: ${execQuantity} FilterMinQty: ${global.filters[symbol].minQty}`);
     }
 }
-subscribe();
+
+setTimeout(() => {
+    subscribe();
+}, 2000);
 
 function subscribe(){
     updateOrders();
@@ -335,7 +338,7 @@ function updateOrders(){
 setTimeout(() => {
     getAllOrders();
     finalStep();
-}, 4000);
+}, 5000);
 
 function getAllOrders(){
     let startTime = '2019-10-25 08:15:00';
