@@ -57,7 +57,7 @@ setInterval(() => {
             let tickerPercent = current/average;
             // let Epsillon = global.filters[symbol].tickSize/10;
 
-            /* Set steps when server starts up */
+            /* Restore steps when server starts up */
             if(typeof global.takeProfitPrice[symbol] == 'undefined'){
                 let finalStep = global.finalStep[symbol];
                 if(finalStep == 1){
@@ -87,13 +87,13 @@ setInterval(() => {
             }else if(global.currentStep[symbol]==1 && global.currentPercent[symbol]<=lossSteps[1].percent && global.currentPercent[symbol]>(100-process.env.STOP_LOSS)/100){
                 //Do step 1
                 console.log(`${symbol}: Do step 1 BUY`);
-                market_Buy(symbol, current, lossSteps[1].orderPercent);
                 /* Calculate the priceAverage to calculate the takeprofitPrice */
                 let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*lossSteps[1].orderPercent;
                 let stepSize = Math.abs(Math.log10(global.filters[symbol].stepSize));
                 let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/current, stepSize));
                 global.entryTime[symbol] = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
                 global.priceAverage[symbol] = (global.cummulativeSum[symbol]+perUsdtQuantity)/(global.executedSum[symbol]+execQuantity);
+                market_Buy(symbol, current, lossSteps[1].orderPercent);
                 global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
                 global.currentStep[symbol] = 2;
             }else if(global.currentStep[symbol]>0 && global.currentPercent[symbol]<=(100-process.env.STOP_LOSS)/100){
@@ -117,7 +117,7 @@ setInterval(() => {
     getAllOrders();
     /* Update cummulativeSum and executedSum */
     finalStep();
-}, 70000);
+}, 7000);
 
 function market_Buy(symbol, symbolPrice, orderPercent){
     let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*orderPercent;
@@ -335,7 +335,7 @@ function updateOrders(){
 setTimeout(() => {
     getAllOrders();
     finalStep();
-}, 3000);
+}, 4000);
 
 function getAllOrders(){
     let startTime = '2019-10-25 08:15:00';
