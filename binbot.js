@@ -117,7 +117,7 @@ setInterval(() => {
     getAllOrders();
     /* Update cummulativeSum and executedSum */
     finalStep();
-}, 7000);
+}, 70000);
 
 function market_Buy(symbol, symbolPrice, orderPercent){
     let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*orderPercent;
@@ -171,14 +171,11 @@ function market_Sell(symbol, symbolPrice){
         console.log(`${symbol} ExecQuantity: ${execQuantity} FilterMinQty: ${global.filters[symbol].minQty}`);
     }
 }
-
-setTimeout(() => {
-    subscribe();
-    exchangeInfo();
-}, 2000);
+subscribe();
 
 function subscribe(){
     updateOrders();
+    exchangeInfo();
     binance.prices((error, ticker) => {
         if ( error ) console.log(error.body);
         for ( let symbol in ticker ) {
