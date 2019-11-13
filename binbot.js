@@ -336,7 +336,7 @@ function updateOrders(){
 setTimeout(() => {
     getAllOrders();
     finalStep();
-}, 5000);
+}, 4000);
 
 function getAllOrders(){
     let startTime = '2019-10-25 08:15:00';

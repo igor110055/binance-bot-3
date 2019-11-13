@@ -167,28 +167,6 @@ app.post('/market_order', (req, res) => {
     }
 });
 
-app.get('/binance_keys', (req, res)=>{
-    if(!process.env.BEAR_TOKEN){
-        res.json(apiResponse({
-            result: "No Bear Token Found"
-        }));
-    }else{
-        try{
-            axios.post('https://moontrades.io/api/read/binance/keys',{
-                api_token: process.env.BEAR_TOKEN
-            }).then((response)=>{
-                res.json(apiResponse({
-                    result: response.data
-                }));
-              }).catch(error=>{
-                  console.log(error);
-              });
-        }catch(err){
-            console.log(err);
-        }
-    }
-});
-
 app.get('/uptime', (req, res) => {
     function format(seconds){
         function pad(s){
