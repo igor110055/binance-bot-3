@@ -40,7 +40,7 @@ app.get('/settings', (req, res) => {
         result.totalUSDT = global.totalUsdtd;
         result.currentUSDTBalance = (!isEmpty(global.balance))?global.balance['USDT'].available:0;
         result.totalUSDTProfit = global.totalUsdtProfit;
-        result.totalUSDTProfitPercentage = global.totalUsdtProfit/(global.totalUsdtd+Math.abs(global.totalUsdtProfit))*100;
+        result.totalUSDTProfitPercentage = global.totalUsdtProfit/Math.abs(global.totalUsdtd-global.totalUsdtProfit)*100;
         result.stoploss = process.env.STOP_LOSS;
         result.takeprofit = process.env.TAKE_PROFIT;
         res.json(apiResponse({
@@ -53,15 +53,15 @@ app.get('/settings', (req, res) => {
 
 app.get('/symbolInfo', (req, res) => {
     try{
-        let result = global.statistics;
+        let result = global.usdtProfit;
         res.json(apiResponse({
             result: Object.keys(result).map(key => ({
                 ...result[key],
                 asset: (!isEmpty(global.balance)) ? global.balance[key.replace('USDT', '')].available : {},
                 assetUsdtValue: (!isEmpty(global.balance))?global.balance[key.replace('USDT', '')].usdtTotal:0,
                 currentPricePercent: global.currentPercent[key],
-                usdtProfit: result[key].usdtProfit,
-                usdtProfitPercent: (result[key].usdtProfit/Math.abs(global.totalAbsUsdtProfit)*100).toFixed(2)
+                usdtProfit: result[key].value,
+                usdtProfitPercent: (result[key].value/Math.abs(global.totalUsdtd-global.totalUsdtProfit)*100).toFixed(2)
             }))
         }));
     } catch (error){

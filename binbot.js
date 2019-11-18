@@ -25,7 +25,6 @@ global.symbolInfo = {};
 global.filters ={};
 global.usdtProfit= {};
 global.totalUsdtProfit = 0;
-global.totalAbsUsdtProfit = 0;
 global.statistics = {};
 global.currentStep = {};
 global.currentPercent = {};
@@ -37,6 +36,7 @@ global.stopPrice= {};
 global.entryTime = {};
 for(let pair of usePairs){
     global.statistics[pair] = {};
+    global.usdtProfit[pair] = {};
     global.currentStep[pair] = 0;
     global.stopPrice[pair] = 0;
 }
@@ -49,7 +49,7 @@ global.takeProfitPrice = {};
 setInterval(() => {
     for(pair of usePairs){
         binance.prevDay(pair, (error, response) => {
-            if (error) console.log(error.body);
+            if (error) console.log(error);
             let obj = response;
             let symbol = obj.symbol;
             let current = parseFloat(obj.bidPrice);
@@ -341,7 +341,6 @@ setTimeout(() => {
 function getAllOrders(){
     let startTime = '2019-10-25 08:15:00';
     let totalUsdtProfit = 0;
-    let totalAbsUsdtProfit = 0;
     for (let pair of usePairs){
         getOrder(process.env.API_KEY, pair, startTime).then(orders=>{
             let orderCount = 0;
@@ -354,16 +353,15 @@ function getAllOrders(){
                 }
                 orderCount += 1;
             }
-            sum = sum+global.balance[pair.replace('USDT', '')].usdtTotal;
-            global.statistics[pair].symbol = pair;
             global.statistics[pair].usdtProfit = sum;
-            global.statistics[pair].orderCounts = orderCount;
         });
-        totalUsdtProfit += global.statistics[pair].usdtProfit;
-        totalAbsUsdtProfit += Math.abs(global.statistics[pair].usdtProfit);
-        global.totalUsdtProfit = totalUsdtProfit;
-        global.totalAbsUsdtProfit = totalAbsUsdtProfit;
+        /* Profit by pair */
+        global.usdtProfit[pair].symbol = pair;
+        global.usdtProfit[pair].value = global.statistics[pair].usdtProfit+global.balance[pair.replace('USDT','')].usdtTotal;
+        totalUsdtProfit += global.usdtProfit[pair].value;
     }
+    global.totalUsdtProfit = totalUsdtProfit;
+    // console.log(global.usdtProfit);
 }
 
 function finalStep(){
