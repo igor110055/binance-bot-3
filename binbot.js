@@ -343,7 +343,6 @@ function getAllOrders(){
     let totalUsdtProfit = 0;
     for (let pair of usePairs){
         getOrder(process.env.API_KEY, pair, startTime).then(orders=>{
-            let orderCount = 0;
             let sum = 0;
             for (let order of orders){
                 if(order.side == 'BUY'){
@@ -351,17 +350,15 @@ function getAllOrders(){
                 }else if(order.side == 'SELL'){
                     sum += parseFloat(order.cummulativeQuoteQty)-parseFloat(order.cummulativeQuoteQty)*0.001;
                 }
-                orderCount += 1;
             }
             global.statistics[pair].usdtProfit = sum;
         });
         /* Profit by pair */
         global.usdtProfit[pair].symbol = pair;
         global.usdtProfit[pair].value = global.statistics[pair].usdtProfit+global.balance[pair.replace('USDT','')].usdtTotal;
-        totalUsdtProfit += global.usdtProfit[pair].value;
+        totalUsdtProfit += global.statistics[pair].usdtProfit;
     }
-    global.totalUsdtProfit = totalUsdtProfit;
-    // console.log(global.usdtProfit);
+    global.totalUsdtProfit = totalUsdtProfit+(global.totalUsdtd-global.balance['USDT'].usdtTotal);
 }
 
 function finalStep(){
