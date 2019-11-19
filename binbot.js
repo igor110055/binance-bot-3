@@ -376,7 +376,7 @@ function finalStep(){
                 if(transactTime.length == 0){
                     transactTime = order.transactTime;
                 }
-                cummulativeSum += order.cummulativeQuoteQty;
+                cummulativeSum += order.price * order.executedQty;
                 executedSum += order.executedQty;
                 if(orderOrigQty == order.origQty) continue;
                 step += 1;

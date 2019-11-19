@@ -138,6 +138,16 @@ app.get('/trade_history', (req, res) => {
       });
 });
 
+/* Get trade history */
+app.get('/withdraw_history', (req, res) => {
+    // Get price from Binance api
+    binance.withdrawHistory((error, response) => {
+        res.json(apiResponse({
+            result: response
+        }));
+      }, "USDT");
+});
+
 /* Need test for live website */
 app.get('/open_orders', (req, res) => {
     let {symbol} = req.body;
