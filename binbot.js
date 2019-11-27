@@ -33,6 +33,9 @@ global.executedSum = {};
 global.finalStep = {};
 global.priceAverage= {};
 global.stopPrice= {};
+global.tickerCurrent = {};
+global.tickerAverage = {};
+global.tickerPercent = {};
 global.entryTime = {};
 for(let pair of usePairs){
     global.statistics[pair] = {};
@@ -52,9 +55,9 @@ setInterval(() => {
             if (error) console.log(error);
             let obj = response;
             let symbol = obj.symbol;
-            let current = parseFloat(obj.bidPrice);
-            let average = parseFloat(obj.weightedAvgPrice);
-            let tickerPercent = current/average;
+            global.tickerCurrent[symbol] = parseFloat(obj.bidPrice);
+            global.tickerAverage[symbol] = parseFloat(obj.weightedAvgPrice);
+            global.tickerPercent[symbol] = global.tickerCurrent[symbol]/global.tickerAverage[symbol];
             // let Epsillon = global.filters[symbol].tickSize/10;
 
             /* Restore steps when server starts up */
@@ -62,26 +65,27 @@ setInterval(() => {
                 let finalStep = global.finalStep[symbol];
                 if(finalStep == 1){
                     /* Sync step */
-                    global.currentPercent[symbol] = current/global.stopPrice[symbol];
+                    global.currentPercent[symbol] = global.tickerCurrent[symbol]/global.stopPrice[symbol];
                     global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
                     global.currentStep[symbol] = 1;
                 }else if(finalStep >= 2){
-                    global.currentPercent[symbol] = current/global.stopPrice[symbol];
+                    global.currentPercent[symbol] = global.tickerCurrent[symbol]/global.stopPrice[symbol];
                     global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
                     global.currentStep[symbol] = 2;
                 }
             }
-            // console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, current:${current} takeProfit: ${global.takeProfitPrice[symbol]}`);
+            // let profitPercent = (global.tickerCurrent[symbol]-global.priceAverage[symbol])/global.priceAverage[symbol]*100;
+            // console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${global.tickerPercent[symbol]}, currentPercent: ${global.currentPercent[symbol]}, current:${global.tickerCurrent[symbol]} takeProfit: ${global.takeProfitPrice[symbol]} Profit Percent: ${profitPercent}`);
             if(global.stopPrice[symbol]>0){
-                global.currentPercent[symbol] = current/global.stopPrice[symbol];
+                global.currentPercent[symbol] = global.tickerCurrent[symbol]/global.stopPrice[symbol];
             }
-            if(global.currentStep[symbol] == 0 && tickerPercent<=1 && tickerPercent>0.99){
+            if(global.currentStep[symbol] == 0 && global.tickerPercent[symbol]<=1 && global.tickerPercent[symbol]>0.99){
                 // Do step 0
                 console.log(`${symbol}: Do step 0 BUY`);
-                global.stopPrice[symbol] = current;
+                global.stopPrice[symbol] = global.tickerCurrent[symbol];
                 global.entryTime[symbol] = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
-                global.priceAverage[symbol] = current;
-                market_Buy(symbol, current, lossSteps[0].orderPercent);
+                global.priceAverage[symbol] = global.tickerCurrent[symbol];
+                market_Buy(symbol, global.tickerCurrent[symbol], lossSteps[0].orderPercent);
                 global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
                 global.currentStep[symbol] = 1;
             }else if(global.currentStep[symbol]==1 && global.currentPercent[symbol]<=lossSteps[1].percent && global.currentPercent[symbol]>(100-process.env.STOP_LOSS)/100){
@@ -90,10 +94,10 @@ setInterval(() => {
                 /* Calculate the priceAverage to calculate the takeprofitPrice */
                 let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*lossSteps[1].orderPercent;
                 let stepSize = Math.abs(Math.log10(global.filters[symbol].stepSize));
-                let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/current, stepSize));
+                let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/global.tickerCurrent[symbol], stepSize));
                 global.entryTime[symbol] = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
                 global.priceAverage[symbol] = (global.cummulativeSum[symbol]+perUsdtQuantity)/(global.executedSum[symbol]+execQuantity);
-                market_Buy(symbol, current, lossSteps[1].orderPercent);
+                market_Buy(symbol, global.tickerCurrent[symbol], lossSteps[1].orderPercent);
                 global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
                 global.currentStep[symbol] = 2;
             }else if(global.currentStep[symbol]>0 && global.currentPercent[symbol]<=(100-process.env.STOP_LOSS)/100){
@@ -102,14 +106,14 @@ setInterval(() => {
                 global.currentStep[symbol] = 0;
                 global.stopPrice[symbol] = 0;
                 global.currentPercent[symbol] = 0;
-                market_Sell(symbol, current);
-            }else if(global.currentStep[symbol]>0 && current>=global.takeProfitPrice[symbol]){
+                market_Sell(symbol, global.tickerCurrent[symbol]);
+            }else if(global.currentStep[symbol]>0 && global.tickerCurrent[symbol]>=global.takeProfitPrice[symbol]){
                 /* Market sell */
                 console.log(`${symbol}: Take profit SELL`);
                 global.currentStep[symbol] = 0;
                 global.stopPrice[symbol] = 0;
                 global.currentPercent[symbol] = 0;
-                market_Sell(symbol, current);
+                market_Sell(symbol, global.tickerCurrent[symbol]);
             }
           });
     }
@@ -387,6 +391,7 @@ function finalStep(){
             global.priceAverage[pair] = cummulativeSum/executedSum; 
             global.finalStep[pair] = step;
             global.stopPrice[pair] = stopPrice;
+            // console.log(`${pair} Final Step: ${global.finalStep[pair]} Stop Price: ${global.stopPrice[pair]} Average Price: ${global.priceAverage[pair]}`);
             if(transactTime.length != 0){
                 global.entryTime[pair] = moment(transactTime).format('YYYY-MM-DD HH:mm:ss');
             }
