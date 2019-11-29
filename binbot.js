@@ -3,7 +3,6 @@ const {truncateOrders, insertOrder, getOrder} = require('./database');
 const {postMessage} = require('./discord.js');
 require('dotenv').config();
 
-
 const binance = require( './node-binance-api' )().options({
     APIKEY: process.env.API_KEY,
     APISECRET: process.env.API_SECRET,
@@ -74,7 +73,7 @@ setInterval(() => {
                     global.currentStep[symbol] = 2;
                 }
             }
-            // let profitPercent = (global.tickerCurrent[symbol]-global.priceAverage[symbol])/global.priceAverage[symbol]*100;
+            // let profitPercent = global.tickerCurrent[symbol]/global.priceAverage[symbol];
             // console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${global.tickerPercent[symbol]}, currentPercent: ${global.currentPercent[symbol]}, current:${global.tickerCurrent[symbol]} takeProfit: ${global.takeProfitPrice[symbol]} Profit Percent: ${profitPercent}`);
             if(global.stopPrice[symbol]>0){
                 global.currentPercent[symbol] = global.tickerCurrent[symbol]/global.stopPrice[symbol];
