@@ -1,12 +1,15 @@
 const express = require('express');
 var exec = require('child_process').exec;
 const moment = require('moment-timezone');
-const BinanceBot = require('./binbot.js');
-const {isEmpty} = require('./binbot.js');
+const {BinBot} = require('./binbot.js');
 const {getOrder} = require('./database');
 const axios = require('axios');
 require('dotenv').config();
 require('log-timestamp');
+
+const bot = new BinBot();
+
+bot.subscribe();
 
 const app =express();
 app.use((req, res, next) => {
@@ -37,10 +40,10 @@ const binance = require('./node-binance-api')().options({
 app.get('/settings', (req, res) => {
     try{
         let result = {};
-        result.totalUSDT = global.totalUsdtd;
-        result.currentUSDTBalance = (!isEmpty(global.balance))?global.balance['USDT'].available:0;
-        result.totalUSDTProfit = global.totalUsdtProfit;
-        result.totalUSDTProfitPercentage = global.totalUsdtProfit/Math.abs(global.totalUsdtd-global.totalUsdtProfit)*100;
+        result.totalUSDT = bot.totalUsdtd;
+        result.currentUSDTBalance = (!bot.isEmpty(bot.balance))?bot.balance['USDT'].available:0;
+        result.totalUSDTProfit = bot.totalUsdtProfit;
+        result.totalUSDTProfitPercentage = bot.totalUsdtProfit/Math.abs(bot.totalUsdtd-bot.totalUsdtProfit)*100;
         result.stoploss = process.env.STOP_LOSS;
         result.takeprofit = process.env.TAKE_PROFIT;
         res.json(apiResponse({
@@ -53,15 +56,15 @@ app.get('/settings', (req, res) => {
 
 app.get('/symbolInfo', (req, res) => {
     try{
-        let result = global.usdtProfit;
+        let result = bot.usdtProfit;
         res.json(apiResponse({
             result: Object.keys(result).map(key => ({
                 ...result[key],
-                asset: (!isEmpty(global.balance)) ? global.balance[key.replace('USDT', '')].available : {},
-                assetUsdtValue: (!isEmpty(global.balance))?global.balance[key.replace('USDT', '')].usdtTotal:0,
-                currentPricePercent: global.currentPercent[key],
+                asset: (!bot.isEmpty(bot.balance)) ? bot.balance[key.replace('USDT', '')].available : {},
+                assetUsdtValue: (!bot.isEmpty(bot.balance))?bot.balance[key.replace('USDT', '')].usdtTotal:0,
+                currentPricePercent: bot.currentPercent[key],
                 usdtProfit: result[key].value,
-                usdtProfitPercent: (result[key].value/Math.abs(global.totalUsdtd-global.totalUsdtProfit)*100).toFixed(2)
+                usdtProfitPercent: (result[key].value/Math.abs(bot.totalUsdtd-bot.totalUsdtProfit)*100).toFixed(2)
             }))
         }));
     } catch (error){
@@ -85,7 +88,7 @@ app.get('/get_balance', (req, res) => {
 app.get('/get_balances', (req, res) => {
     binance.balance((error, balances) => {
         if ( error ) console.error(error.body);
-        let results = global.balance;
+        let results = bot.balance;
         res.json(apiResponse({
             result: results
         }));
