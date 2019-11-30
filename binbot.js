@@ -16,10 +16,8 @@ class BinBot{
         this.price = {};
         this.ticker = {};
         this.balance ={};
-        this.test = 0;
         this.totalUsdtd = 0;
         this.symbolPrices = {};
-        this.orderFilled = {};
         this.orders = {};
         this.symbolInfo = {};
         this.filters = {};
@@ -34,7 +32,6 @@ class BinBot{
         this.priceAverage= {};
         this.stopPrice= {};
         this.entryTime = {};
-        this.test = {};
 
         this.binapi = binance();
         this.binapi.options({
@@ -69,13 +66,92 @@ class BinBot{
             // console.log(this.totalUsdtd);
         });
         /*Websocket communication*/
-        this.binapi.websockets.userData(this.balance_update, this.execution_update);
+        this.binapi.websockets.userData(this.balance_update.bind(this), this.execution_update);
+        setTimeout(()=>{
+            this.getAllOrders();
+            this.lastStep();
+        }, 3000);
+        setInterval(()=>{
+            this.bot_process();
+        }, 5000);
+    }
+    bot_process(){
+        for(let pair of usePairs){
+            this.binapi.prevDay(pair, (error, response) => {
+                if (error) console.log(error);
+                let obj = response;
+                let symbol = obj.symbol;
+                let current = parseFloat(obj.bidPrice);
+                let average = parseFloat(obj.weightedAvgPrice);
+                let tickerPercent = current/average;
+                // let Epsillon = this.filters[symbol].tickSize/10;
+
+                /* Restore steps when server starts up */
+                if(typeof this.takeProfitPrice[symbol] == 'undefined'){
+                    let finalStep = this.finalStep[symbol];
+                    if(finalStep == 1){
+                        /* Sync step */
+                        this.currentPercent[symbol] = current/this.stopPrice[symbol];
+                        this.takeProfitPrice[symbol] = this.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
+                        this.currentStep[symbol] = 1;
+                    }else if(finalStep >= 2){
+                        this.currentPercent[symbol] = current/this.stopPrice[symbol];
+                        this.takeProfitPrice[symbol] = this.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
+                        this.currentStep[symbol] = 2;
+                    }
+                }
+                // console.log(`${symbol} Step: ${this.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${this.currentPercent[symbol]}, current:${current} takeProfit: ${this.takeProfitPrice[symbol]}`);
+                if(this.stopPrice[symbol]>0){
+                    this.currentPercent[symbol] = current/this.stopPrice[symbol];
+                }
+                if(this.currentStep[symbol] == 0 && tickerPercent<=1 && tickerPercent>0.99){
+                    // Do step 0
+                    console.log(`${symbol}: Do step 0 BUY`);
+                    this.stopPrice[symbol] = current;
+                    this.entryTime[symbol] = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
+                    this.priceAverage[symbol] = current;
+                    this.market_Buy(symbol, current, lossSteps[0].orderPercent);
+                    this.takeProfitPrice[symbol] = this.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
+                    this.currentStep[symbol] = 1;
+                }else if(this.currentStep[symbol]==1 && this.currentPercent[symbol]<=lossSteps[1].percent && this.currentPercent[symbol]>(100-process.env.STOP_LOSS)/100){
+                    //Do step 1
+                    console.log(`${symbol}: Do step 1 BUY`);
+                    /* Calculate the priceAverage to calculate the takeprofitPrice */
+                    let perUsdtQuantity = parseFloat(this.totalUsdtd)/parseInt(usePairs.length)*lossSteps[1].orderPercent;
+                    let stepSize = Math.abs(Math.log10(this.filters[symbol].stepSize));
+                    let execQuantity = parseFloat(this.FixedToDown(perUsdtQuantity/current, stepSize));
+                    this.entryTime[symbol] = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
+                    this.priceAverage[symbol] = (this.cummulativeSum[symbol]+perUsdtQuantity)/(this.executedSum[symbol]+execQuantity);
+                    this.market_Buy(symbol, current, lossSteps[1].orderPercent);
+                    this.takeProfitPrice[symbol] = this.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
+                    this.currentStep[symbol] = 2;
+                }else if(this.currentStep[symbol]>0 && this.currentPercent[symbol]<=(100-process.env.STOP_LOSS)/100){
+                    /* Do Market Sell */
+                    console.log(`${symbol}: Stop loss SELL`);
+                    this.currentStep[symbol] = 0;
+                    this.stopPrice[symbol] = 0;
+                    this.currentPercent[symbol] = 0;
+                    this.market_Sell(symbol, current);
+                }else if(this.currentStep[symbol]>0 && current>=this.takeProfitPrice[symbol]){
+                    /* Market sell */
+                    console.log(`${symbol}: Take profit SELL`);
+                    this.currentStep[symbol] = 0;
+                    this.stopPrice[symbol] = 0;
+                    this.currentPercent[symbol] = 0;
+                    this.market_Sell(symbol, current);
+                }
+            });
+        }
+        /* Update Statistics Values */
+        this.getAllOrders();
+        /* Update cummulativeSum and executedSum */
+        this.lastStep();
     }
 
     market_Buy(symbol, symbolPrice, orderPercent){
         let perUsdtQuantity = parseFloat(this.totalUsdtd)/parseInt(usePairs.length)*orderPercent;
         let stepSize = Math.abs(Math.log10(this.filters[symbol].stepSize));
-        let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/symbolPrice, stepSize));
+        let execQuantity = parseFloat(this.FixedToDown(perUsdtQuantity/symbolPrice, stepSize));
         if(this.balance['USDT'] < perUsdtQuantity){
             console.log(`USDT Balance is insufficient to buy ${symbol}`);
             return;
@@ -97,7 +173,7 @@ class BinBot{
 
     market_Sell(symbol, symbolPrice){
         let stepSize = Math.abs(Math.log10(this.filters[symbol].stepSize));
-        let execQuantity = parseFloat(FixedToDown(this.balance[symbol.replace('USDT','')].available, stepSize));
+        let execQuantity = parseFloat(this.FixedToDown(this.balance[symbol.replace('USDT','')].available, stepSize));
         if(execQuantity > this.filters[symbol].minQty){
             /* Market sell order */
             this.binapi.marketSell(symbol, execQuantity, (error, response)=>{
@@ -127,12 +203,13 @@ class BinBot{
 
     /* Get balance of usePairs Set global balance on server start up*/
     useBalance(){
+        let this_ = this;
         this.binapi.balance(function (error, balances) {
             try{
                 if (error) console.log(error.body);
                 let usdt = 0.00;
                 /* Get symbol Price */
-                if(isEmpty(balances) == false){
+                if(this_.isEmpty(balances) == false){
                     for (let pair of usePairs){
                         let asset = pair.replace('USDT','');
                         let obj = balances[asset];
@@ -140,32 +217,33 @@ class BinBot{
                         obj.onOrder = parseFloat(obj.onOrder);
                         obj.usdtValue = 0;
                         obj.usdtTotal = 0;
+                        // console.log(this_.symbolPrices[pair]);
                         if ( asset == 'USDT' ) obj.usdtValue = obj.available;
-                        else obj.usdtValue = obj.available * this.symbolPrices[pair];
+                        else obj.usdtValue = obj.available * this_.symbolPrices[pair];
                         
                         if ( asset == 'USDT' ) obj.usdtTotal = obj.available + obj.onOrder;
-                        else obj.usdtTotal = (obj.available + obj.onOrder) * this.symbolPrices[pair];
+                        else obj.usdtTotal = (obj.available + obj.onOrder) * this_.symbolPrices[pair];
                         
                         if ( isNaN(obj.usdtValue) ) obj.usdtValue = 0;
                         if ( isNaN(obj.usdtTotal) ) obj.usdtTotal = 0;
                         
                         usdt += parseFloat(obj.usdtTotal);
-                        this.balance[asset] = obj;
+                        this_.balance[asset] = obj;
                     }
-                    this.balance['USDT'] = balances.USDT;
-                    this.balance['USDT'].available = parseFloat(balances.USDT.available);
-                    this.balance['USDT'].onOrder = parseFloat(balances.USDT.onOrder);
-                    this.balance['USDT'].usdtValue = this.balance['USDT'].available;
-                    this.balance['USDT'].usdtTotal = this.balance['USDT'].available+this.balance['USDT'].onOrder;
-                    this.totalUsdtd = usdt + this.balance['USDT'].usdtTotal;
+                    this_.balance['USDT'] = balances.USDT;
+                    this_.balance['USDT'].available = parseFloat(balances.USDT.available);
+                    this_.balance['USDT'].onOrder = parseFloat(balances.USDT.onOrder);
+                    this_.balance['USDT'].usdtValue = this_.balance['USDT'].available;
+                    this_.balance['USDT'].usdtTotal = this_.balance['USDT'].available+this_.balance['USDT'].onOrder;
+                    this_.totalUsdtd = usdt + this_.balance['USDT'].usdtTotal;
                 }
-                // console.log(this.balance);
+                // console.log(this_.balance);
             }catch(error){
-                console.log(error.body);
+                console.log(error);
             }
         });
     }
-
+    
     /* The only time the user data (account balances) and order execution websockets will fire, is if you create or cancel an order, or an order gets filled or partially filled */
     balance_update(data) {
         console.log("Balance Update");
@@ -228,12 +306,10 @@ class BinBot{
             fillable.side = side;
             fillable.price = parseFloat(lastExcecutedPrice);
             fillable.transactTime = moment.utc(transactTime).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
-            this.orderFilled[symbol] = fillable;
             insertOrder(fillable)
             .then(result=>{console.log(result);})
             .catch((error)=> console.log(error.body));
             console.log(`${symbol} : Market Order ${side} Placed.`);
-            // console.log(this.orderFilled[symbol]);
         }
     }
 
@@ -262,7 +338,7 @@ class BinBot{
                         fillable.transactTime = moment.utc(order.time).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
                         insertOrder(fillable)
                             .then()
-                            .catch((error)=> console.log(error.body));
+                            .catch((error)=> console.log(error));
                     });
                 }
             });
@@ -298,7 +374,7 @@ class BinBot{
                 filters.icebergAllowed = obj.icebergAllowed;
                 minimums[obj.symbol] = filters;
             }
-            this_.filters = minimums;            
+            this_.filters = minimums;
             //fs.writeFile("minimums.json", JSON.stringify(minimums, null, 4), function(err){});
         });
     }
@@ -326,7 +402,8 @@ class BinBot{
         this.totalUsdtProfit = totalUsdtProfit+(this.totalUsdtd-this.balance['USDT'].usdtTotal);
     }
     
-    finalStep(){
+    lastStep(){
+        let this_ = this;
         for (let pair of usePairs){
             getOrder(process.env.API_KEY, pair).then(function (orders){
                 let step = 0;
@@ -347,14 +424,16 @@ class BinBot{
                     step += 1;
                     orderOrigQty = order.origQty;
                 }
-                this.cummulativeSum[pair] = cummulativeSum;
-                this.executedSum[pair] = executedSum;
-                this.priceAverage[pair] = cummulativeSum/executedSum; 
-                this.finalStep[pair] = step;
-                this.stopPrice[pair] = stopPrice;
+                this_.cummulativeSum[pair] = cummulativeSum;
+                this_.executedSum[pair] = executedSum;
+                this_.priceAverage[pair] = cummulativeSum/executedSum; 
+                this_.finalStep[pair] = step;
+                this_.stopPrice[pair] = stopPrice;
                 if(transactTime.length != 0){
-                    this.entryTime[pair] = moment(transactTime).format('YYYY-MM-DD HH:mm:ss');
+                    this_.entryTime[pair] = moment(transactTime).format('YYYY-MM-DD HH:mm:ss');
                 }
+            }).catch(err=>{
+                console.log(err);
             });
         }
     }
@@ -382,6 +461,11 @@ class BinBot{
         return typeof obj[Symbol.iterator] === 'function';
     }
 
+    /**
+     * Check object is empty or not
+     * @param {object} obj - The object 
+     * @returns {boolean} true or false
+     */
     isEmpty(obj) {
         for(var key in obj) {
             if(obj.hasOwnProperty(key))
@@ -392,84 +476,6 @@ class BinBot{
     
 }
 module.exports.BinBot = BinBot;
-
-// setInterval(() => {
-//     for(pair of usePairs){
-//         this.binapi.prevDay(pair, (error, response) => {
-//             if (error) console.log(error);
-//             let obj = response;
-//             let symbol = obj.symbol;
-//             let current = parseFloat(obj.bidPrice);
-//             let average = parseFloat(obj.weightedAvgPrice);
-//             let tickerPercent = current/average;
-//             // let Epsillon = global.filters[symbol].tickSize/10;
-
-//             /* Restore steps when server starts up */
-//             if(typeof global.takeProfitPrice[symbol] == 'undefined'){
-//                 let finalStep = global.finalStep[symbol];
-//                 if(finalStep == 1){
-//                     /* Sync step */
-//                     global.currentPercent[symbol] = current/global.stopPrice[symbol];
-//                     global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
-//                     global.currentStep[symbol] = 1;
-//                 }else if(finalStep >= 2){
-//                     global.currentPercent[symbol] = current/global.stopPrice[symbol];
-//                     global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
-//                     global.currentStep[symbol] = 2;
-//                 }
-//             }
-//             // console.log(`${symbol} Step: ${global.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${global.currentPercent[symbol]}, current:${current} takeProfit: ${global.takeProfitPrice[symbol]}`);
-//             if(global.stopPrice[symbol]>0){
-//                 global.currentPercent[symbol] = current/global.stopPrice[symbol];
-//             }
-//             if(global.currentStep[symbol] == 0 && tickerPercent<=1 && tickerPercent>0.99){
-//                 // Do step 0
-//                 console.log(`${symbol}: Do step 0 BUY`);
-//                 global.stopPrice[symbol] = current;
-//                 global.entryTime[symbol] = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
-//                 global.priceAverage[symbol] = current;
-//                 market_Buy(symbol, current, lossSteps[0].orderPercent);
-//                 global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
-//                 global.currentStep[symbol] = 1;
-//             }else if(global.currentStep[symbol]==1 && global.currentPercent[symbol]<=lossSteps[1].percent && global.currentPercent[symbol]>(100-process.env.STOP_LOSS)/100){
-//                 //Do step 1
-//                 console.log(`${symbol}: Do step 1 BUY`);
-//                 /* Calculate the priceAverage to calculate the takeprofitPrice */
-//                 let perUsdtQuantity = parseFloat(global.totalUsdtd)/parseInt(usePairs.length)*lossSteps[1].orderPercent;
-//                 let stepSize = Math.abs(Math.log10(global.filters[symbol].stepSize));
-//                 let execQuantity = parseFloat(FixedToDown(perUsdtQuantity/current, stepSize));
-//                 global.entryTime[symbol] = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
-//                 global.priceAverage[symbol] = (global.cummulativeSum[symbol]+perUsdtQuantity)/(global.executedSum[symbol]+execQuantity);
-//                 market_Buy(symbol, current, lossSteps[1].orderPercent);
-//                 global.takeProfitPrice[symbol] = global.priceAverage[symbol]*(1+process.env.TAKE_PROFIT/100);
-//                 global.currentStep[symbol] = 2;
-//             }else if(global.currentStep[symbol]>0 && global.currentPercent[symbol]<=(100-process.env.STOP_LOSS)/100){
-//                 /* Do Market Sell */
-//                 console.log(`${symbol}: Stop loss SELL`);
-//                 global.currentStep[symbol] = 0;
-//                 global.stopPrice[symbol] = 0;
-//                 global.currentPercent[symbol] = 0;
-//                 market_Sell(symbol, current);
-//             }else if(global.currentStep[symbol]>0 && current>=global.takeProfitPrice[symbol]){
-//                 /* Market sell */
-//                 console.log(`${symbol}: Take profit SELL`);
-//                 global.currentStep[symbol] = 0;
-//                 global.stopPrice[symbol] = 0;
-//                 global.currentPercent[symbol] = 0;
-//                 market_Sell(symbol, current);
-//             }
-//           });
-//     }
-//     /* Update Statistics Values */
-//     getAllOrders();
-//     /* Update cummulativeSum and executedSum */
-//     finalStep();
-// }, 70000);
-
-// setTimeout(() => {
-//     getAllOrders();
-//     finalStep();
-// }, 4000);
 
 /* Last Order Response Sample
 VETUSDT:
