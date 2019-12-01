@@ -175,11 +175,11 @@ class BinBot{
 
     market_Buy(symbol, symbolPrice, orderPercent){
         let perUsdtQuantity = parseFloat(this.totalUsdtd)/parseInt(usePairs.length)*orderPercent;
+        if(perUsdtQuantity < this.filters[symbol].minNotional){
+            perUsdtQuantity = this.filters[symbol].minNotional;
+        }
         let stepSize = Math.abs(Math.log10(this.filters[symbol].stepSize));
         let execQuantity = parseFloat(this.FixedToDown(perUsdtQuantity/symbolPrice, stepSize));
-        if(execQuantity < this.filters[symbol].minNotional){
-            execQuantity = this.filters[symbol].minNotional;
-        }
         if(this.balance['USDT'] < perUsdtQuantity){
             console.log(`USDT Balance is insufficient to buy ${symbol}`);
             return;
