@@ -131,7 +131,7 @@ class BinBot{
                         }
                     }
                 }
-                console.log(`${symbol} final Step: ${this.finalStep[symbol]} current: ${current} priceAverage: ${this.priceAverage[symbol]} profitPercent: ${this.profitPercent[symbol]} profitStep: ${this.profitStep[symbol]}`)
+                // console.log(`${symbol} final Step: ${this.finalStep[symbol]} current: ${current} priceAverage: ${this.priceAverage[symbol]} profitPercent: ${this.profitPercent[symbol]} profitStep: ${this.profitStep[symbol]}`)
                 if(this.currentStep[symbol] == 0 && tickerPercent<=1 && tickerPercent>0.99){
                     // Do step 0
                     console.log(`${symbol}: Do step 0 BUY TickerPercent: ${tickerPercent}`);
@@ -200,10 +200,10 @@ class BinBot{
             return;
         }
         /* Market buy */
-        // this.binapi.marketBuy(symbol, execQuantity, (error, response) => {
-        //     if(error) {console.log(error.body)};
-        //     console.log(response);
-        // });
+        this.binapi.marketBuy(symbol, execQuantity, (error, response) => {
+            if(error) {console.log(error.body)};
+            console.log(response);
+        });
     }
 
     market_Sell(symbol, symbolPrice){
@@ -212,10 +212,10 @@ class BinBot{
         let execQuantity = parseFloat(this.FixedToDown(this.balance[symbol.replace('USDT','')].available, stepSize));
         if(execQuantity > this.filters[symbol].minQty){
             /* Market sell order */
-            // this.binapi.marketSell(symbol, execQuantity, (error, response)=>{
-            //     if(error) {console.log(error.body);}
-            //     console.log(response);
-            // });
+            this.binapi.marketSell(symbol, execQuantity, (error, response)=>{
+                if(error) {console.log(error.body);}
+                console.log(response);
+            });
             if(process.env.DISCORD_URL && process.env.BOT_NAME == 'main'){
                 let profitPercent = (symbolPrice-this.priceAverage[symbol])/this.priceAverage[symbol]*100;
                 const msg = `-----------------------\n`
