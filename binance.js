@@ -221,4 +221,21 @@ app.post('/server_restart', (req, res) => {
             });
     });
 })
+
+app.post('/process_stop', (req, res) => {
+    console.log('bot process stop');
+    bot.unsubscribe();
+    res.json({
+        result: "Success"
+        });
+})
+
+app.post('/process_start', (req, res) => {
+    console.log('bot process stop');
+    bot.subscribe();
+    res.json({
+        result: "Success"
+        });
+})
+
 app.listen(port, () => console.log(`bot app listening on port ${port}!`));

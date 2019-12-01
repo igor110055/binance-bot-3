@@ -44,6 +44,7 @@ class BinBot{
         this.stopPrice= {};
         this.entryTime = {};
         this.profitPercent = {};
+        this.intervalHandle = '';
 
         this.stop_loss = 6;
 
@@ -86,9 +87,14 @@ class BinBot{
             this.getAllOrders();
             this.lastStep();
         }, 3000);
-        setInterval(()=>{
+        this.intervalHandle = setInterval(()=>{
             this.bot_process();
-        }, 70000);
+        }, 10000);
+    }
+
+    unsubscribe(){
+        clearInterval(this.intervalHandle);
+        this.forceSellAll();
     }
     bot_process(){
         for(let pair of usePairs){
@@ -97,6 +103,7 @@ class BinBot{
                 let obj = response;
                 let symbol = obj.symbol;
                 let current = parseFloat(obj.bidPrice);
+                this.symbolPrices[symbol] = current;
                 let average = parseFloat(obj.weightedAvgPrice);
                 let tickerPercent = current/average;
                 // let Epsillon = this.filters[symbol].tickSize/10;
@@ -124,7 +131,7 @@ class BinBot{
                         }
                     }
                 }
-                // console.log(`${symbol} final Step: ${this.finalStep[symbol]} current: ${current} priceAverage: ${this.priceAverage[symbol]} profitPercent: ${this.profitPercent[symbol]} profitStep: ${this.profitStep[symbol]}`)
+                console.log(`${symbol} final Step: ${this.finalStep[symbol]} current: ${current} priceAverage: ${this.priceAverage[symbol]} profitPercent: ${this.profitPercent[symbol]} profitStep: ${this.profitStep[symbol]}`)
                 if(this.currentStep[symbol] == 0 && tickerPercent<=1 && tickerPercent>0.99){
                     // Do step 0
                     console.log(`${symbol}: Do step 0 BUY TickerPercent: ${tickerPercent}`);
@@ -193,21 +200,22 @@ class BinBot{
             return;
         }
         /* Market buy */
-        this.binapi.marketBuy(symbol, execQuantity, (error, response) => {
-            if(error) {console.log(error.body)};
-            console.log(response);
-        });
+        // this.binapi.marketBuy(symbol, execQuantity, (error, response) => {
+        //     if(error) {console.log(error.body)};
+        //     console.log(response);
+        // });
     }
 
     market_Sell(symbol, symbolPrice){
+        console.log(symbol);
         let stepSize = Math.abs(Math.log10(this.filters[symbol].stepSize));
         let execQuantity = parseFloat(this.FixedToDown(this.balance[symbol.replace('USDT','')].available, stepSize));
         if(execQuantity > this.filters[symbol].minQty){
             /* Market sell order */
-            this.binapi.marketSell(symbol, execQuantity, (error, response)=>{
-                if(error) {console.log(error.body);}
-                console.log(response);
-            });
+            // this.binapi.marketSell(symbol, execQuantity, (error, response)=>{
+            //     if(error) {console.log(error.body);}
+            //     console.log(response);
+            // });
             if(process.env.DISCORD_URL && process.env.BOT_NAME == 'main'){
                 let profitPercent = (symbolPrice-this.priceAverage[symbol])/this.priceAverage[symbol]*100;
                 const msg = `-----------------------\n`
@@ -227,6 +235,18 @@ class BinBot{
             console.log(`Sell Order not permitted.`);
             console.log(`${symbol} ExecQuantity: ${execQuantity} FilterMinQty: ${this.filters[symbol].minQty}`);
         }
+    }
+
+    forceSellAll(){
+        let iteration = 0;
+        let handle = setInterval(()=>{
+            let symbol = usePairs[iteration];
+            this.market_Sell(symbol, this.symbolPrices[symbol]);
+            iteration += 1;
+            if(iteration == usePairs.length){
+                clearInterval(handle);
+            }
+        },1000);
     }
 
     /* Get balance of usePairs Set global balance on server start up*/
