@@ -116,7 +116,6 @@ class BinBot{
                 /* Restore steps when server starts up */
                 if(this.finalStep[symbol] > 0){
                     let finalStep = this.finalStep[symbol];
-                    console.log(`${symbol} final Step: ${this.finalStep[symbol]}`);
                     if(finalStep == 1){
                         /* Sync step */
                         this.currentPercent[symbol] = current/this.stopPrice[symbol];
