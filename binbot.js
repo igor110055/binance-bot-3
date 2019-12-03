@@ -94,7 +94,7 @@ class BinBot{
         }, 3000);
         this.intervalHandle = setInterval(()=>{
             this.bot_process();
-        }, 7000);
+        }, 70000);
     }
 
     unsubscribe(){
