@@ -5,7 +5,12 @@ require('dotenv').config();
 
 const binance = require( './node-binance-api' );
 
-const usePairs = process.env.PAIRS.replace(/\s/g,'').split(',');
+const usePairs = [ 'NEOUSDT','ALGOUSDT','ZRXUSDT','HOTUSDT',
+                    'DASHUSDT','ONTUSDT','ATOMUSDT','XMRUSDT',
+                    'FETUSDT','DOGEUSDT','XLMUSDT','ETCUSDT',
+                    'ADAUSDT','MATICUSDT','TRXUSDT','LTCUSDT',
+                    'BCHUSDT','EOSUSDT','XRPUSDT','LINKUSDT' ];
+
 const lossSteps=[
     {step: 0, percent: 1, orderPercent:0.6},
     {step: 1, percent: 0.97, orderPercent:0.4}
@@ -89,7 +94,7 @@ class BinBot{
         }, 3000);
         this.intervalHandle = setInterval(()=>{
             this.bot_process();
-        }, 10000);
+        }, 70000);
     }
 
     unsubscribe(){
@@ -207,7 +212,6 @@ class BinBot{
     }
 
     market_Sell(symbol, symbolPrice){
-        console.log(symbol);
         let stepSize = Math.abs(Math.log10(this.filters[symbol].stepSize));
         let execQuantity = parseFloat(this.FixedToDown(this.balance[symbol.replace('USDT','')].available, stepSize));
         if(execQuantity > this.filters[symbol].minQty){

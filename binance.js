@@ -18,7 +18,6 @@ app.use((req, res, next) => {
   });
 app.use(express.json());
 const port = +process.env.CONTROL_PORT;
-const usePairs = process.env.PAIRS.replace(/\s/g,'').split(',');
 
 app.get('/', (req, res) => res.send('server status okay'));
 
