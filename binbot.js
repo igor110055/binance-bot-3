@@ -1,5 +1,5 @@
 const moment = require('moment-timezone');
-const {truncateOrders, insertOrder, getOrder} = require('./database');
+const {truncateOrders, insertOrder, getOrder, deleteOrder} = require('./database');
 const {postMessage} = require('./discord.js');
 require('dotenv').config();
 
@@ -94,7 +94,7 @@ class BinBot{
         }, 3000);
         this.intervalHandle = setInterval(()=>{
             this.bot_process();
-        }, 70000);
+        }, 7000);
     }
 
     unsubscribe(){
@@ -116,6 +116,7 @@ class BinBot{
                 /* Restore steps when server starts up */
                 if(this.finalStep[symbol] > 0){
                     let finalStep = this.finalStep[symbol];
+                    console.log(`${symbol} final Step: ${this.finalStep[symbol]}`);
                     if(finalStep == 1){
                         /* Sync step */
                         this.currentPercent[symbol] = current/this.stopPrice[symbol];
@@ -125,7 +126,7 @@ class BinBot{
                         this.currentStep[symbol] = 2;
                     }
                 }
-                // console.log(`${symbol} minNotional: ${this.filters[symbol].minNotional} Step: ${this.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${this.currentPercent[symbol]}, current:${current}`);
+                // console.log(`${symbol} Step: ${this.currentStep[symbol]}, tickerPercent: ${tickerPercent}, currentPercent: ${this.currentPercent[symbol]}, current:${current}`);
                 if(this.stopPrice[symbol]>0){
                     this.currentPercent[symbol] = current/this.stopPrice[symbol];
                     this.profitPercent[symbol] = current/this.priceAverage[symbol];
@@ -238,6 +239,12 @@ class BinBot{
         }else{
             console.log(`Sell Order not permitted.`);
             console.log(`${symbol} ExecQuantity: ${execQuantity} FilterMinQty: ${this.filters[symbol].minQty}`);
+            /* remove order bad order history that cause error */
+            deleteOrder(symbol).then(res=>{
+                this.currentStep[symbol] = 0;
+                this.finalStep[symbol] = 0;
+                console.log(`${symbol} bad order history deleted`);
+            }).catch(err=>{console.log(err)});
         }
     }
 
@@ -460,7 +467,7 @@ class BinBot{
             getOrder(process.env.API_KEY, pair).then(function (orders){
                 let step = 0;
                 let stopPrice = 0;
-                let orderOrigQty='';
+                let orderOrigQty= 0;
                 let cummulativeSum= 0;
                 let executedSum = 0;
                 let transactTime = '';
@@ -472,7 +479,7 @@ class BinBot{
                     }
                     cummulativeSum += order.price * order.executedQty;
                     executedSum += order.executedQty;
-                    if(orderOrigQty == order.origQty) continue;
+                    if(orderOrigQty && orderOrigQty == order.origQty) continue;
                     step += 1;
                     orderOrigQty = order.origQty;
                 }

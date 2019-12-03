@@ -58,6 +58,13 @@ const getOrder = function getOrder(apiKey, symbol, startTime, endTime, limit) {
     return query;
 }
 
+const deleteOrder = function deleteOrder(symbol) {
+    let query = knex('orders')
+    .where('symbol', symbol)
+    .del();
+    return query;
+}
+
 const getDeals = function getDeals(apiKey, startTime, endTime) {
     let query = knex
         .select('side', 'symbol', 'quantity', 'entryPrice', 'exitPrice', 'realizedPnL', 'realizedPnLPercent', 'openDateTime', 'closeDateTime', 'fee')
@@ -180,6 +187,7 @@ module.exports.getUsers = getUsers;
 module.exports.truncateOrders = truncateOrders;
 module.exports.insertOrder = insertOrder;
 module.exports.getOrder = getOrder;
+module.exports.deleteOrder = deleteOrder;
 module.exports.getDeals = getDeals;
 module.exports.getTotalRealizedPnL = getTotalRealizedPnL;
 module.exports.getTotalTrades = getTotalTrades;
