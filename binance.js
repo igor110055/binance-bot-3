@@ -237,4 +237,18 @@ app.post('/process_start', (req, res) => {
         });
 })
 
+app.post('/stop_buy', (req, res) => {
+    bot.tvsignal = false;
+    res.json({
+        result: "Open No Trades"
+    })
+});
+
+app.post('/start_buy', (req, res) => {
+    bot.tvsignal = true;
+    res.json({
+        result: "Open New Trades"
+    })
+});
+
 app.listen(port, () => console.log(`bot app listening on port ${port}!`));

@@ -50,6 +50,7 @@ class BinBot{
         this.entryTime = {};
         this.profitPercent = {};
         this.intervalHandle = '';
+        this.tvsignal = true;
 
         this.stop_loss = 6;
 
@@ -137,7 +138,7 @@ class BinBot{
                     }
                 }
                 // console.log(`${symbol} final Step: ${this.finalStep[symbol]} current: ${current} priceAverage: ${this.priceAverage[symbol]} profitPercent: ${this.profitPercent[symbol]} profitStep: ${this.profitStep[symbol]}`)
-                if(this.currentStep[symbol] == 0 && tickerPercent<=1 && tickerPercent>0.99){
+                if(this.currentStep[symbol] == 0 && tickerPercent<=1 && tickerPercent>0.99 && this.tvsignal){
                     // Do step 0
                     console.log(`${symbol}: Do step 0 BUY TickerPercent: ${tickerPercent}`);
                     this.stopPrice[symbol] = current;
@@ -145,7 +146,7 @@ class BinBot{
                     this.priceAverage[symbol] = current;
                     this.market_Buy(symbol, current, lossSteps[0].orderPercent);
                     this.currentStep[symbol] = 1;
-                }else if(this.currentStep[symbol]==1 && this.currentPercent[symbol]<=lossSteps[1].percent && this.currentPercent[symbol]>(100-this.stop_loss)/100){
+                }else if(this.currentStep[symbol]==1 && this.currentPercent[symbol]<=lossSteps[1].percent && this.currentPercent[symbol]>(100-this.stop_loss)/100 && this.tvsignal){
                     //Do step 1
                     console.log(`${symbol}: Do step 1 BUY CurrentPercent ${this.currentPercent[symbol]}`);
                     /* Calculate the priceAverage to calculate the takeprofitPrice */
