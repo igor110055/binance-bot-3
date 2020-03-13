@@ -1,15 +1,16 @@
 const moment = require('moment-timezone');
 const {truncateOrders, insertOrder, getOrder, deleteOrder} = require('./database');
 const {postMessage} = require('./discord.js');
+const {sendMessage} = require('./telegram');
 require('dotenv').config();
 
 const binance = require( './node-binance-api' );
 
-const usePairs = [ 'NEOUSDT','ALGOUSDT','ZRXUSDT','HOTUSDT',
+const usePairs = [ 'BTCUSDT','ALGOUSDT','ZRXUSDT', 'BNBUSDT',
                     'DASHUSDT','ONTUSDT','ATOMUSDT','XMRUSDT',
                     'FETUSDT','DOGEUSDT','XLMUSDT','ETCUSDT',
                     'ADAUSDT','MATICUSDT','TRXUSDT','LTCUSDT',
-                    'BCHUSDT','EOSUSDT','XRPUSDT','LINKUSDT' ];
+                    'BCHUSDT','EOSUSDT','XRPUSDT' ];
 
 const lossSteps=[
     {step: 0, percent: 1, orderPercent:0.6},
@@ -210,6 +211,22 @@ class BinBot{
             if(error) {console.log(error.body)};
             console.log(response);
         });
+        if( process.env.BOT_NAME == 'Merenka'){
+            const msg = `-----------------------\n`
+            // + `Name: Binance Bot\n`
+            + `Pair: ${symbol}\n`
+            + `Side: BUY \n`
+            + `Time: ${moment
+                .utc(Date.now())
+                .tz('Europe/Berlin')
+                .format('YYYY-MM-DD HH:mm:ss')} (UTC +2)\n`
+            + `Price: ${symbolPrice}\n`
+            + `Name: ${process.env.BOT_NAME}`;
+            // + `Entry Price: ${this.priceAverage[symbol]}\n`
+            // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
+            sendMessage(msg);
+            // postMessage(msg);
+        }
     }
 
     market_Sell(symbol, symbolPrice){
@@ -221,20 +238,23 @@ class BinBot{
                 if(error) {console.log(error.body);}
                 console.log(response);
             });
-            if(process.env.DISCORD_URL && process.env.BOT_NAME == 'main'){
+            if( process.env.BOT_NAME == 'Merenka'){
                 let profitPercent = (symbolPrice-this.priceAverage[symbol])/this.priceAverage[symbol]*100;
                 const msg = `-----------------------\n`
-                + `Name: Binance Bot\n`
-                + `PnL: ${profitPercent.toFixed(2)}%\n`
+                // + `Name: Binance Bot\n`
                 + `Pair: ${symbol}\n`
-                + `Entry Price: ${this.priceAverage[symbol]}\n`
-                + `Exit Price: ${symbolPrice}\n`
-                + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`
-                + `Closed at ${moment
+                + `Side: SELL \n`
+                + `Time: ${moment
                     .utc(Date.now())
                     .tz('Europe/Berlin')
-                    .format('YYYY-MM-DD HH:mm:ss')} (UTC +2)\n`;
-                postMessage(msg);
+                    .format('YYYY-MM-DD HH:mm:ss')} (UTC +2)\n`
+                + `Price: ${symbolPrice}\n`
+                + `PnL: ${profitPercent.toFixed(2)}%\n`
+                + `Name: ${process.env.BOT_NAME}`;
+                // + `Entry Price: ${this.priceAverage[symbol]}\n`
+                // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
+                sendMessage(msg);
+                // postMessage(msg);
             }
         }else{
             console.log(`Sell Order not permitted.`);

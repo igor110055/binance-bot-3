@@ -5,6 +5,7 @@ const {BinBot} = require('./binbot.js');
 const {getOrder} = require('./database');
 const axios = require('axios');
 const {postMessage} = require('./discord.js');
+const {sendMessage} = require('./telegram');
 const bodyParser = require('body-parser');
 
 require('dotenv').config();
@@ -213,8 +214,16 @@ app.post('/git_pull', (req, res) => {
     });
 });
 
+app.post('/send_message', (req, res) => {
+    let {msg} = req.body;
+    sendMessage(msg);
+    res.json({
+        result: "Success"
+        });
+});
+
 app.post('/post_message', (req, res) => {
-    let msg = req.body;
+    let {msg} = req.body;
     postMessage(msg);
     res.json({
         result: "Success"
