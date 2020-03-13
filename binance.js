@@ -4,6 +4,9 @@ const moment = require('moment-timezone');
 const {BinBot} = require('./binbot.js');
 const {getOrder} = require('./database');
 const axios = require('axios');
+const {postMessage} = require('./discord.js');
+const bodyParser = require('body-parser');
+
 require('dotenv').config();
 require('log-timestamp');
 
@@ -16,7 +19,8 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     next();
   });
-app.use(express.json());
+app.use(bodyParser.text());
+app.use(bodyParser.json());
 const port = +process.env.CONTROL_PORT;
 
 app.get('/', (req, res) => res.send('server status okay'));
@@ -207,7 +211,15 @@ app.post('/git_pull', (req, res) => {
         stderr: stderr
         });
     });
-})
+});
+
+app.post('/post_message', (req, res) => {
+    let msg = req.body;
+    postMessage(msg);
+    res.json({
+        result: "Success"
+        });
+});
 
 app.post('/server_restart', (req, res) => {
     console.log('Server restarting..');
