@@ -5,7 +5,7 @@ const postMessage = function postMessage(msg) {
     axios.post(process.env.DISCORD_URL, {
         content: msg
     }).then (response => {
-        console.log('posting to discord success');
+        // console.log('posting to discord success');
     }).catch (err => {
         console.log(err);
     });

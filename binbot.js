@@ -211,7 +211,7 @@ class BinBot{
             if(error) {console.log(error.body)};
             console.log(response);
         });
-        if( process.env.BOT_NAME == 'Merenka'){
+        if( process.env.BOT_NAME == 'ENLA'){
             const msg = `-----------------------\n`
             // + `Name: Binance Bot\n`
             + `Pair: ${symbol}\n`
@@ -225,7 +225,7 @@ class BinBot{
             // + `Entry Price: ${this.priceAverage[symbol]}\n`
             // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
             sendMessage(msg);
-            // postMessage(msg);
+            postMessage(msg);
         }
     }
 
@@ -238,7 +238,7 @@ class BinBot{
                 if(error) {console.log(error.body);}
                 console.log(response);
             });
-            if( process.env.BOT_NAME == 'Merenka'){
+            if( process.env.BOT_NAME == 'ENLA'){
                 let profitPercent = (symbolPrice-this.priceAverage[symbol])/this.priceAverage[symbol]*100;
                 const msg = `-----------------------\n`
                 // + `Name: Binance Bot\n`
@@ -254,7 +254,7 @@ class BinBot{
                 // + `Entry Price: ${this.priceAverage[symbol]}\n`
                 // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
                 sendMessage(msg);
-                // postMessage(msg);
+                postMessage(msg);
             }
         }else{
             console.log(`Sell Order not permitted.`);
