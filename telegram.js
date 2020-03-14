@@ -12,6 +12,14 @@ const sendMessage = function sendMessage(msg) {
     }).catch (err => {
         console.log(err);
     });
+    axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/sendMessage`, {
+        chat_id: process.env.TELEGRAM_MOONMEDIA_CHANNEL,
+        text: msg
+    }).then (response => {
+        // console.log(response.data.result.text);
+    }).catch (err => {
+        console.log(err);
+    });
 };
 
 module.exports.sendMessage = sendMessage;

@@ -208,25 +208,28 @@ class BinBot{
         }
         /* Market buy */
         this.binapi.marketBuy(symbol, execQuantity, (error, response) => {
-            if(error) {console.log(error.body)};
+            if(error) {
+                console.log(error.body);
+                return;
+            };
             console.log(response);
+            if( process.env.BOT_NAME == 'ENLA'){
+                const msg = `-----------------------\n`
+                // + `Name: Binance Bot\n`
+                + `Pair: ${symbol}\n`
+                + `Side: BUY \n`
+                + `Time: ${moment
+                    .utc(Date.now())
+                    .tz('Europe/Berlin')
+                    .format('YYYY-MM-DD HH:mm:ss')} (UTC +2)\n`
+                + `Price: ${this.symbolPrices[symbol]}\n`
+                + `Name: ${process.env.BOT_NAME}`;
+                // + `Entry Price: ${this.priceAverage[symbol]}\n`
+                // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
+                // sendMessage(msg);
+                postMessage(msg);
+            }
         });
-        if( process.env.BOT_NAME == 'ENLA'){
-            const msg = `-----------------------\n`
-            // + `Name: Binance Bot\n`
-            + `Pair: ${symbol}\n`
-            + `Side: BUY \n`
-            + `Time: ${moment
-                .utc(Date.now())
-                .tz('Europe/Berlin')
-                .format('YYYY-MM-DD HH:mm:ss')} (UTC +2)\n`
-            + `Price: ${symbolPrice}\n`
-            + `Name: ${process.env.BOT_NAME}`;
-            // + `Entry Price: ${this.priceAverage[symbol]}\n`
-            // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
-            sendMessage(msg);
-            postMessage(msg);
-        }
     }
 
     market_Sell(symbol, symbolPrice){
@@ -235,27 +238,30 @@ class BinBot{
         if(execQuantity > this.filters[symbol].minQty){
             /* Market sell order */
             this.binapi.marketSell(symbol, execQuantity, (error, response)=>{
-                if(error) {console.log(error.body);}
+                if(error) {
+                    console.log(error.body);
+                    return;
+                }
                 console.log(response);
+                if( process.env.BOT_NAME == 'ENLA'){
+                    let profitPercent = (this.symbolPrices[symbol]-this.priceAverage[symbol])/this.priceAverage[symbol]*100;
+                    const msg = `-----------------------\n`
+                    // + `Name: Binance Bot\n`
+                    + `Pair: ${symbol}\n`
+                    + `Side: SELL \n`
+                    + `Time: ${moment
+                        .utc(Date.now())
+                        .tz('Europe/Berlin')
+                        .format('YYYY-MM-DD HH:mm:ss')} (UTC +2)\n`
+                    + `Price: ${this.symbolPrices[symbol]}\n`
+                    + `PnL: ${profitPercent.toFixed(2)}%\n`
+                    + `Name: ${process.env.BOT_NAME}`;
+                    // + `Entry Price: ${this.priceAverage[symbol]}\n`
+                    // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
+                    // sendMessage(msg);
+                    postMessage(msg);
+                }
             });
-            if( process.env.BOT_NAME == 'ENLA'){
-                let profitPercent = (symbolPrice-this.priceAverage[symbol])/this.priceAverage[symbol]*100;
-                const msg = `-----------------------\n`
-                // + `Name: Binance Bot\n`
-                + `Pair: ${symbol}\n`
-                + `Side: SELL \n`
-                + `Time: ${moment
-                    .utc(Date.now())
-                    .tz('Europe/Berlin')
-                    .format('YYYY-MM-DD HH:mm:ss')} (UTC +2)\n`
-                + `Price: ${symbolPrice}\n`
-                + `PnL: ${profitPercent.toFixed(2)}%\n`
-                + `Name: ${process.env.BOT_NAME}`;
-                // + `Entry Price: ${this.priceAverage[symbol]}\n`
-                // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
-                sendMessage(msg);
-                postMessage(msg);
-            }
         }else{
             console.log(`Sell Order not permitted.`);
             console.log(`${symbol} ExecQuantity: ${execQuantity} FilterMinQty: ${this.filters[symbol].minQty}`);
@@ -384,6 +390,7 @@ class BinBot{
             fillable.cummulativeQuoteQty = parseFloat(cummulativeQuoteQty);
             fillable.side = side;
             fillable.price = parseFloat(lastExcecutedPrice);
+            this.symbolPrices[symbol] = fillable.price;
             fillable.transactTime = moment.utc(transactTime).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
             insertOrder(fillable)
             .then(result=>{console.log(result);})
