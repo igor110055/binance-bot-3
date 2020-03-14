@@ -386,6 +386,9 @@ class BinBot{
                 if(orders.length>0){
                     orders.forEach(order=>{
                         let fillable = {};
+                        fillable.transactTime = moment.utc(order.time).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
+                        let startTime = process.env.START_TIME || '2019-10-25 08:15:00';
+                        if (fillable.transactTime < startTime) return;
                         fillable.apiKey = process.env.API_KEY;
                         fillable.symbol = order.symbol;
                         fillable.orderId = order.orderId;
@@ -394,7 +397,6 @@ class BinBot{
                         fillable.cummulativeQuoteQty = parseFloat(order.cummulativeQuoteQty);
                         fillable.side = order.side;
                         fillable.price = parseFloat(order.cummulativeQuoteQty)/parseFloat(order.origQty);
-                        fillable.transactTime = moment.utc(order.time).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
                         insertOrder(fillable)
                             .then()
                             .catch((error)=> console.log(error));
@@ -439,7 +441,7 @@ class BinBot{
     }
 
     getAllOrders(){
-        let startTime = '2019-10-25 08:15:00';
+        let startTime = process.env.START_TIME || '2019-10-25 08:15:00';
         let totalUsdtProfit = 0;
         for (let pair of usePairs){
             getOrder(process.env.API_KEY, pair, startTime).then(orders=>{
