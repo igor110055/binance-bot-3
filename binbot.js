@@ -226,7 +226,7 @@ class BinBot{
                 + `Name: ${process.env.BOT_NAME}`;
                 // + `Entry Price: ${this.priceAverage[symbol]}\n`
                 // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
-                // sendMessage(msg);
+                sendMessage(msg);
                 postMessage(msg);
             }
         });
@@ -258,7 +258,7 @@ class BinBot{
                     + `Name: ${process.env.BOT_NAME}`;
                     // + `Entry Price: ${this.priceAverage[symbol]}\n`
                     // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
-                    // sendMessage(msg);
+                    sendMessage(msg);
                     postMessage(msg);
                 }
             });
