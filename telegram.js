@@ -8,7 +8,7 @@ const sendMessage = function sendMessage(msg) {
         chat_id: process.env.TELEGRAM_CHANNEL,
         text: msg
     }).then (response => {
-        console.log(response.data.result.text);
+        // console.log(response.data.result.text);
     }).catch (err => {
         console.log(err);
     });
