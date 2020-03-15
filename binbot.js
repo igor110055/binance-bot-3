@@ -390,7 +390,6 @@ class BinBot{
             fillable.cummulativeQuoteQty = parseFloat(cummulativeQuoteQty);
             fillable.side = side;
             fillable.price = parseFloat(lastExcecutedPrice);
-            this.symbolPrices[symbol] = fillable.price;
             fillable.transactTime = moment.utc(transactTime).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
             insertOrder(fillable)
             .then(result=>{console.log(result);})
