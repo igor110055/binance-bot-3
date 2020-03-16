@@ -317,7 +317,7 @@ const monthlyJob = new CronJob('0 0 0 1 * *', function(totalUsdt) {
         let percentage = (profit / lastTotal * 100).toFixed(2);
         if (percentage){
             let msg = `-----------------------\n`
-            + `TODAY PROFIT ( ${moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD')} (UTC +2) )\n`
+            + `THIS MONTH PROFIT ( ${moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD')} (UTC +2) )\n`
             + `PnL: ${percentage}% \n`
             + `Name: ${process.env.BOT_NAME}`;
             sendMessage(msg);
