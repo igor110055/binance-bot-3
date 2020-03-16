@@ -2,7 +2,7 @@ const express = require('express');
 var exec = require('child_process').exec;
 const moment = require('moment-timezone');
 const {BinBot} = require('./binbot.js');
-const {getOrder} = require('./database');
+const {getOrder, insertTotalusdt, getTotalusdt} = require('./database');
 const axios = require('axios');
 const {postMessage} = require('./discord.js');
 const {sendMessage} = require('./telegram');
@@ -273,3 +273,58 @@ app.post('/start_buy', (req, res) => {
 });
 
 app.listen(port, () => console.log(`bot app listening on port ${port}!`));
+
+
+/** Cron Jobs */
+const CronJob = require('cron').CronJob;
+const dailyJob = new CronJob('0 0 23 * * *', function() {
+  let current = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
+  let lastday = moment.utc(Date.now()).tz('Europe/Berlin').subtract(24,"hours").format('YYYY-MM-DD HH:mm:ss');
+
+  if (bot.totalUsdtd){
+    getTotalusdt(lastday, current).then(totals=>{
+        let lastTotal = totals[0].totalUsdt;
+        let profit = bot.totalUsdtd - lastTotal;
+        let percentage = (profit / lastTotal * 100).toFixed(2);
+        if (percentage){
+            let msg = `-----------------------\n`
+            + `TODAY PROFIT ( ${moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD')} (UTC +2) )\n`
+            + `PnL: ${percentage}% \n`
+            + `Name: ${process.env.BOT_NAME}`;
+            sendMessage(msg);
+            postMessage(msg);
+        }
+      });
+
+    let total = {
+        totalUsdt: bot.totalUsdtd,
+        time: current
+    }
+    insertTotalusdt(total)
+    .then(res=>console.log(res))
+    .catch(err=>{console.log(err)});
+  }
+}, null, true, 'Europe/Berlin');
+dailyJob.start();
+const monthlyJob = new CronJob('0 0 0 1 * *', function(totalUsdt) {
+  let lastday_before = moment.utc(Date.now()).tz('Europe/Berlin').subtract(29,"days").format('YYYY-MM-DD HH:mm:ss');
+  let lastday = moment.utc(Date.now()).tz('Europe/Berlin').subtract(30,"days").format('YYYY-MM-DD HH:mm:ss');
+
+  if (bot.totalUsdtd){
+    getTotalusdt(lastday_before, lastday).then(totals=>{
+        let lastTotal = totals[0].totalUsdt;
+        let profit = bot.totalUsdtd - lastTotal;
+        let percentage = (profit / lastTotal * 100).toFixed(2);
+        if (percentage){
+            let msg = `-----------------------\n`
+            + `TODAY PROFIT ( ${moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD')} (UTC +2) )\n`
+            + `PnL: ${percentage}% \n`
+            + `Name: ${process.env.BOT_NAME}`;
+            sendMessage(msg);
+            postMessage(msg);
+        }
+      });
+  }
+}, null, true, 'Europe/Berlin');
+monthlyJob.start();
+/**End of Cron Jobs */

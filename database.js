@@ -65,24 +65,22 @@ const deleteOrder = function deleteOrder(symbol) {
     return query;
 }
 
-const getDeals = function getDeals(apiKey, startTime, endTime) {
+const insertTotalusdt = function insertTotalusdt(total){
+    return knex('totals').insert(total);
+}
+
+const getTotalusdt = function getTotalusdt(startTime, endTime){
     let query = knex
-        .select('side', 'symbol', 'quantity', 'entryPrice', 'exitPrice', 'realizedPnL', 'realizedPnLPercent', 'openDateTime', 'closeDateTime', 'fee')
-        .from('deals')
-        .where({
-            apiKey,
-            deleted: 0
-        })
-        .orderBy('closeDateTime', 'desc')
-        .limit(20);
+                .select('*')
+                .from('totals');
 
     if (startTime)
-        query = query.andWhere('closeDateTime', '>=', startTime);
+        query = query.where('time', '>=', startTime);
     if (endTime)
-        query = query.andWhere('closeDateTime', '<=', endTime);
+        query = query.andWhere('time', '<', endTime);
     
     return query;
-};
+}
 
 const getTotalRealizedPnL = function getTotalRealizedPnL(apiKey, startTime, endTime) {
     let query = knex
@@ -138,46 +136,6 @@ const getTotalOrders = async function getTotalOrders(apiKey, startTime, endTime)
     return query;
 };
 
-const getMarginExist = async function getMarginExist(apiKey) {
-    return knex
-        .count('apiKey', {as: 'val'})
-        .from('margins')
-        .where({
-            apiKey,
-            symbol: 'BTCUSD'
-        });
-};
-
-const getMarginBefore = function getMarginBefore(apiKey, time) {
-    let query = knex
-        .select('balance')
-        .from('margins')
-        .orderBy('date', 'desc').limit(1)
-        .where({
-            apiKey,
-            symbol: 'BTCUSD'
-        });
-    if (time)
-        query = query.andWhere('date', '<=', time);
-    
-    return query;
-};
-
-const getMarginAfter = function getMarginAfter(apiKey, time) {
-    let query = knex
-        .select('balance')
-        .from('margins')
-        .orderBy('date', 'asc').limit(1)
-        .where({
-            apiKey,
-            symbol: 'BTCUSD'
-        });
-    if (time)
-        query = query.andWhere('date', '>=', time);
-    
-    return query;
-};
-
 
 module.exports.knex = knex;
 module.exports.insertUser = insertUser;
@@ -188,10 +146,8 @@ module.exports.truncateOrders = truncateOrders;
 module.exports.insertOrder = insertOrder;
 module.exports.getOrder = getOrder;
 module.exports.deleteOrder = deleteOrder;
-module.exports.getDeals = getDeals;
 module.exports.getTotalRealizedPnL = getTotalRealizedPnL;
 module.exports.getTotalTrades = getTotalTrades;
 module.exports.getTotalOrders = getTotalOrders;
-module.exports.getMarginExist = getMarginExist;
-module.exports.getMarginBefore = getMarginBefore;
-module.exports.getMarginAfter = getMarginAfter;
+module.exports.insertTotalusdt = insertTotalusdt;
+module.exports.getTotalusdt = getTotalusdt;

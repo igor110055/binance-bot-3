@@ -1,5 +1,5 @@
 const moment = require('moment-timezone');
-const {truncateOrders, insertOrder, getOrder, deleteOrder} = require('./database');
+const {truncateOrders, insertOrder, getOrder, deleteOrder, insertPnl} = require('./database');
 const {postMessage} = require('./discord.js');
 const {sendMessage} = require('./telegram');
 require('dotenv').config();
@@ -185,6 +185,7 @@ class BinBot{
         this.getAllOrders();
         /* Update cummulativeSum and executedSum */
         this.lastStep();
+        console.log(this.totalUsdtd);
     }
 
     market_Buy(symbol, symbolPrice, orderPercent){
@@ -244,7 +245,7 @@ class BinBot{
                 }
                 console.log(response);
                 if( process.env.BOT_NAME == 'ENLA'){
-                    let profitPercent = (this.symbolPrices[symbol]-this.priceAverage[symbol])/this.priceAverage[symbol]*100;
+                    let profitPercent = (this.symbolPrices[symbol]-this.priceAverage[symbol])/this.priceAverage[symbol];
                     const msg = `-----------------------\n`
                     // + `Name: Binance Bot\n`
                     + `Pair: ${symbol}\n`
@@ -254,7 +255,7 @@ class BinBot{
                         .tz('Europe/Berlin')
                         .format('YYYY-MM-DD HH:mm:ss')} (UTC +2)\n`
                     + `Price: ${this.symbolPrices[symbol]}\n`
-                    + `PnL: ${profitPercent.toFixed(2)}%\n`
+                    + `PnL: ${profitPercent.toFixed(2)*100}%\n`
                     + `Name: ${process.env.BOT_NAME}`;
                     // + `Entry Price: ${this.priceAverage[symbol]}\n`
                     // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
@@ -506,6 +507,8 @@ class BinBot{
                     }
                     cummulativeSum += order.price * order.executedQty;
                     executedSum += order.executedQty;
+
+                    /** Calculate the number of steps. Check partially filled order. if origQty same, its partially filled order*/
                     if(orderOrigQty && orderOrigQty == order.origQty) continue;
                     step += 1;
                     orderOrigQty = order.origQty;
