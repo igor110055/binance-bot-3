@@ -185,7 +185,6 @@ class BinBot{
         this.getAllOrders();
         /* Update cummulativeSum and executedSum */
         this.lastStep();
-        console.log(this.totalUsdtd);
     }
 
     market_Buy(symbol, symbolPrice, orderPercent){
