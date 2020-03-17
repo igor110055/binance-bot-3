@@ -52,7 +52,7 @@ class BinBot{
         this.intervalHandle = '';
         this.tvsignal = true;
 
-        this.stop_loss = 6;
+        this.stop_loss = 2;
 
         this.binapi = binance();
         this.binapi.options({
