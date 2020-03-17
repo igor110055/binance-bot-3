@@ -255,7 +255,7 @@ class BinBot{
                         .tz('Europe/Berlin')
                         .format('YYYY-MM-DD HH:mm:ss')} (UTC +2)\n`
                     + `Price: ${this.symbolPrices[symbol]}\n`
-                    + `PnL: ${profitPercent.toFixed(2)*100}%\n`
+                    + `PnL: ${(profitPercent*100).toFixed(2)}%\n`
                     + `Name: ${process.env.BOT_NAME}`;
                     // + `Entry Price: ${this.priceAverage[symbol]}\n`
                     // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
