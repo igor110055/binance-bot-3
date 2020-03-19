@@ -11,8 +11,10 @@ const sendMessage = function sendMessage(msg) {
             text: msg
         }).then (response => {
             // console.log(response.data.result.text);
+            return;
         }).catch (err => {
             console.log(err);
+            return;
         });
     }
 
@@ -22,8 +24,10 @@ const sendMessage = function sendMessage(msg) {
             text: msg
         }).then (response => {
             // console.log(response.data.result.text);
+            return;
         }).catch (err => {
             console.log(err);
+            return;
         });
     }
 };

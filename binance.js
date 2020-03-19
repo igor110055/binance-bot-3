@@ -90,11 +90,10 @@ app.get('/get_balance', (req, res) => {
 });
 
 app.get('/get_balances', (req, res) => {
-    binance.balance((error, balances) => {
+    bot.binapi.balance((error, balances) => {
         if ( error ) console.error(error.body);
-        let results = bot.balance;
         res.json(apiResponse({
-            result: results
+            result: balances
         }));
       });
 });
@@ -134,15 +133,35 @@ app.get('/get_order', (req, res)=>{
     })
 });
 
+app.post('/cancel_orders', (req, res)=>{
+    let {symbol} = req.body
+    bot.binapi.cancelOrders(symbol, (err, result, symbol)=>{
+        if(err) console.log(err.body);
+        res.json(apiResponse({
+            result: result
+        }));
+    })
+})
+
 /* Get trade history */
 app.get('/trade_history', (req, res) => {
     let {symbol} = req.body;
     // Get price from Binance api
-    binance.trades(symbol, (error, trades, symbol) => {
+    bot.binapi.trades(symbol, (error, trades, symbol) => {
         res.json(apiResponse({
             result: trades
         }));
       });
+});
+
+app.get('/recent_trades', (req, res) => {
+    let {symbol, limit} = req.body;
+    // Get price from Binance api
+    bot.binapi.recentTrades(symbol, (error, trades, symbol) => {
+        res.json(apiResponse({
+            result: trades
+        }));
+      }, limit);
 });
 
 /* Get trade history */
@@ -168,7 +187,7 @@ app.get('/open_orders', (req, res) => {
 app.post('/market_order', (req, res) => {
     let {symbol:symbol, quantity:quantity, side:side} = req.body;
     if(side === "BUY"){
-        binance.marketBuy(symbol, quantity, (error, response) => {
+        bot.binapi.marketBuy(symbol, quantity, (error, response) => {
             if(error) console.log(error);
             // Now you can limit sell with a stop loss, etc.
             res.json(apiResponse({
@@ -176,7 +195,45 @@ app.post('/market_order', (req, res) => {
             }));
           });
     }else if(side === "SELL"){
-        binance.marketSell(symbol, quantity, (error, response) => {
+        bot.binapi.marketSell(symbol, quantity, (error, response) => {
+            if (error) console.log(error.body);
+            res.json(apiResponse({
+                result: response
+            }));
+          });
+    }
+});
+
+app.post('/make_order', (req, res) => {
+    let {
+        symbol:symbol,
+        quantity:quantity,
+        price: price,
+        type: type,
+        side:side
+    } = req.body;
+    /**
+     *  Type	        Additional mandatory parameters
+        LIMIT	        timeInForce, quantity, price
+        MARKET	        quantity or quoteOrderQty
+        STOP_LOSS	    quantity, stopPrice
+        STOP_LOSS_LIMIT	timeInForce, quantity, price, stopPrice
+        TAKE_PROFIT	    quantity, stopPrice
+        TAKE_PROFIT_LIMIT	timeInForce, quantity, price, stopPrice
+        LIMIT_MAKER	    quantity, price
+     */
+
+    if(side === "BUY"){
+        bot.binapi.buy(symbol, quantity, price, {type: type}, (error, response) => {
+            if(error) console.log(error.body);
+            // Now you can limit sell with a stop loss, etc.
+            res.json(apiResponse({
+                result: response
+            }));
+          });
+    }else if(side === "SELL"){
+        bot.binapi.sell(symbol, quantity, price, {type: type}, (error, response) => {
+            if (error) console.log(error.body);
             res.json(apiResponse({
                 result: response
             }));

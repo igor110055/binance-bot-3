@@ -227,7 +227,7 @@ class BinBot{
                 // + `Entry Price: ${this.priceAverage[symbol]}\n`
                 // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
                 sendMessage(msg);
-                postMessage(msg);
+                // postMessage(msg);
             }
         });
     }
@@ -259,7 +259,7 @@ class BinBot{
                     // + `Entry Price: ${this.priceAverage[symbol]}\n`
                     // + `Opened at ${this.entryTime[symbol]} (UTC +2)\n`;
                     sendMessage(msg);
-                    postMessage(msg);
+                    // postMessage(msg);
                 }
             });
         }else{
