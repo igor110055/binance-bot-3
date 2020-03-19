@@ -428,7 +428,7 @@ class BinBot{
                             .catch((error)=> console.log(error));
                     });
                 }
-            });
+            }, {limit:10});
         });
     }
 

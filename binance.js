@@ -349,7 +349,7 @@ const dailyJob = new CronJob('0 0 23 * * *', function() {
             + `PnL: ${percentage}% \n`
             + `Name: ${process.env.BOT_NAME}`;
             sendMessage(msg);
-            postMessage(msg);
+            // postMessage(msg);
         }
       });
 
@@ -378,7 +378,7 @@ const monthlyJob = new CronJob('0 0 0 1 * *', function(totalUsdt) {
             + `PnL: ${percentage}% \n`
             + `Name: ${process.env.BOT_NAME}`;
             sendMessage(msg);
-            postMessage(msg);
+            // postMessage(msg);
         }
       });
   }
