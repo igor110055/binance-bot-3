@@ -10,7 +10,7 @@ const usePairs = [ 'BTCUSDT','ALGOUSDT','ZRXUSDT', 'BNBUSDT',
                     'DASHUSDT','ONTUSDT','ATOMUSDT','XMRUSDT',
                     'FETUSDT','DOGEUSDT','XLMUSDT','ETCUSDT',
                     'ADAUSDT','MATICUSDT','TRXUSDT','LTCUSDT',
-                    'BCHUSDT','EOSUSDT','XRPUSDT' ];
+                    'BCHUSDT','EOSUSDT','XRPUSDT', 'ETHUSDT' ];
 
 const lossSteps=[
     {step: 0, percent: 1, orderPercent:0.6},
@@ -178,6 +178,13 @@ class BinBot{
                         this.lockProfitStep[symbol] = -1;
                         this.market_Sell(symbol, current);
                     }
+                }else if(this.tvsignal === false){
+                    /* Immediate Sell from Tradingview No Trades Signal */
+                    console.log(`${symbol}: No Trade Signal SELL CurrentPercent: ${this.currentPercent[symbol]}`);
+                    this.currentStep[symbol] = 0;
+                    this.stopPrice[symbol] = 0;
+                    this.currentPercent[symbol] = 0;
+                    this.market_Sell(symbol, current);
                 }
             });
         }
