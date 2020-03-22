@@ -98,6 +98,20 @@ app.get('/get_balances', (req, res) => {
       });
 });
 
+app.get('/get_tvsignal', (req, res)=>{
+    res.json(apiResponse({
+        result: bot.tvsignal
+    }));
+})
+
+app.post('/set_tvsignal', (req, res)=>{
+    let {tvsignal} = req.body;
+    bot.tvsignal = tvsignal;
+    res.json(apiResponse({
+        result: bot.tvsignal
+    }));
+})
+
 /**
  * Get price of the symbol
  */
