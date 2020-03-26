@@ -178,14 +178,14 @@ class BinBot{
                         this.currentPercent[symbol] = 0;
                         this.lockProfitStep[symbol] = -1;
                         this.market_Sell(symbol, current);
+                    }else if(this.tvsignal[symbol] === false){
+                        /* Immediate Sell from Tradingview No Trades Signal */
+                        console.log(`${symbol}: No Trade Signal SELL CurrentPercent: ${this.currentPercent[symbol]}`);
+                        this.currentStep[symbol] = 0;
+                        this.stopPrice[symbol] = 0;
+                        this.currentPercent[symbol] = 0;
+                        this.market_Sell(symbol, current);
                     }
-                }else if(this.tvsignal[symbol] === false){
-                    /* Immediate Sell from Tradingview No Trades Signal */
-                    console.log(`${symbol}: No Trade Signal SELL CurrentPercent: ${this.currentPercent[symbol]}`);
-                    this.currentStep[symbol] = 0;
-                    this.stopPrice[symbol] = 0;
-                    this.currentPercent[symbol] = 0;
-                    this.market_Sell(symbol, current);
                 }
             });
         }
