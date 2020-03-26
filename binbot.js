@@ -164,6 +164,7 @@ class BinBot{
                     this.currentStep[symbol] = 0;
                     this.stopPrice[symbol] = 0;
                     this.currentPercent[symbol] = 0;
+                    this.lockProfitStep[symbol] = -1;
                     this.market_Sell(symbol, current);
                 }else if(this.currentStep[symbol]>0){
                     // console.log(`${symbol} ProfitStep:${this.profitStep[symbol]} lockProfitStep: ${this.lockProfitStep[symbol]}`);
@@ -172,6 +173,14 @@ class BinBot{
                     }else if(this.profitStep[symbol] < this.lockProfitStep[symbol] || this.profitStep[symbol] == (profitSteps.length-1)){
                         /* Market sell */
                         console.log(`${symbol}: Take profit SELL TakeProfitStep: ${this.lockProfitStep[symbol]}`);
+                        this.currentStep[symbol] = 0;
+                        this.stopPrice[symbol] = 0;
+                        this.currentPercent[symbol] = 0;
+                        this.lockProfitStep[symbol] = -1;
+                        this.market_Sell(symbol, current);
+                    }else if(this.tvsignal[symbol] === false){
+                        /* Immediate Sell from Tradingview No Trades Signal */
+                        console.log(`${symbol}: No Trade Signal SELL CurrentPercent: ${this.currentPercent[symbol]}`);
                         this.currentStep[symbol] = 0;
                         this.stopPrice[symbol] = 0;
                         this.currentPercent[symbol] = 0;
