@@ -99,16 +99,17 @@ app.get('/get_balances', (req, res) => {
 });
 
 app.get('/get_tvsignal', (req, res)=>{
+    let {pair} = req.body
     res.json(apiResponse({
-        result: bot.tvsignal
+        result: bot.tvsignal[pair]
     }));
 })
 
 app.post('/set_tvsignal', (req, res)=>{
-    let {tvsignal} = req.body;
-    bot.tvsignal = tvsignal;
+    let {pair, signal} = req.body;
+    bot.tvsignal[pair] = signal;
     res.json(apiResponse({
-        result: bot.tvsignal
+        result: bot.tvsignal[pair]
     }));
 })
 
@@ -330,14 +331,16 @@ app.post('/process_start', (req, res) => {
 })
 
 app.post('/stop_buy', (req, res) => {
-    bot.tvsignal = false;
+    let {pair} = req.body;
+    bot.tvsignal[pair] = false;
     res.json({
         result: "Open No Trades"
     })
 });
 
 app.post('/start_buy', (req, res) => {
-    bot.tvsignal = true;
+    let {pair} = req.body;
+    bot.tvsignal[pair] = true;
     res.json({
         result: "Open New Trades"
     })

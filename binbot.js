@@ -51,7 +51,7 @@ class BinBot{
         this.entryTime = {};
         this.profitPercent = {};
         this.intervalHandle = '';
-        this.tvsignal = true;
+        this.tvsignal = {};
 
         this.stop_loss = 6;
 
@@ -72,6 +72,7 @@ class BinBot{
             this.stopPrice[pair] = 0;
             this.profitStep[pair] = -1;
             this.lockProfitStep[pair] = -1;
+            this.tvsignal[pair] = false;
         }
     }
 
@@ -139,7 +140,7 @@ class BinBot{
                     }
                 }
                 // console.log(`${symbol} final Step: ${this.finalStep[symbol]} current: ${current} priceAverage: ${this.priceAverage[symbol]} profitPercent: ${this.profitPercent[symbol]} profitStep: ${this.profitStep[symbol]}`)
-                if(this.currentStep[symbol] == 0 && tickerPercent<=1 && tickerPercent>0.99 && this.tvsignal){
+                if(this.currentStep[symbol] == 0 && tickerPercent<=1 && tickerPercent>0.99 && this.tvsignal[symbol]){
                     // Do step 0
                     console.log(`${symbol}: Do step 0 BUY TickerPercent: ${tickerPercent}`);
                     this.stopPrice[symbol] = current;
@@ -147,7 +148,7 @@ class BinBot{
                     this.priceAverage[symbol] = current;
                     this.market_Buy(symbol, current, lossSteps[0].orderPercent);
                     this.currentStep[symbol] = 1;
-                }else if(this.currentStep[symbol]==1 && this.currentPercent[symbol]<=lossSteps[1].percent && this.currentPercent[symbol]>(100-this.stop_loss)/100 && this.tvsignal){
+                }else if(this.currentStep[symbol]==1 && this.currentPercent[symbol]<=lossSteps[1].percent && this.currentPercent[symbol]>(100-this.stop_loss)/100 && this.tvsignal[symbol]){
                     //Do step 1
                     console.log(`${symbol}: Do step 1 BUY CurrentPercent ${this.currentPercent[symbol]}`);
                     /* Calculate the priceAverage to calculate the takeprofitPrice */
@@ -178,7 +179,7 @@ class BinBot{
                         this.lockProfitStep[symbol] = -1;
                         this.market_Sell(symbol, current);
                     }
-                }else if(this.tvsignal === false){
+                }else if(this.tvsignal[symbol] === false){
                     /* Immediate Sell from Tradingview No Trades Signal */
                     console.log(`${symbol}: No Trade Signal SELL CurrentPercent: ${this.currentPercent[symbol]}`);
                     this.currentStep[symbol] = 0;
