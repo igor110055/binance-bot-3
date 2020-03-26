@@ -250,14 +250,16 @@ app.post('/process_start', (req, res) => {
 })
 
 app.post('/stop_buy', (req, res) => {
-    bot.tvsignal = false;
+    let {pair} = req.body
+    bot.tvsignal[pair] = false;
     res.json({
         result: "Open No Trades"
     })
 });
 
 app.post('/start_buy', (req, res) => {
-    bot.tvsignal = true;
+    let {pair} = req.body
+    bot.tvsignal[pair] = true;
     res.json({
         result: "Open New Trades"
     })
