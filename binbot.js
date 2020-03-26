@@ -165,6 +165,7 @@ class BinBot{
                     this.currentStep[symbol] = 0;
                     this.stopPrice[symbol] = 0;
                     this.currentPercent[symbol] = 0;
+                    this.lockProfitStep[symbol] = -1;
                     this.market_Sell(symbol, current);
                 }else if(this.currentStep[symbol]>0){
                     // console.log(`${symbol} ProfitStep:${this.profitStep[symbol]} lockProfitStep: ${this.lockProfitStep[symbol]}`);
@@ -184,6 +185,7 @@ class BinBot{
                         this.currentStep[symbol] = 0;
                         this.stopPrice[symbol] = 0;
                         this.currentPercent[symbol] = 0;
+                        this.lockProfitStep[symbol] = -1;
                         this.market_Sell(symbol, current);
                     }
                 }
