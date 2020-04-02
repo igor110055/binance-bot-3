@@ -53,7 +53,7 @@ class BinBot{
         this.intervalHandle = '';
         this.tvsignal = {};
 
-        this.stop_loss = 6;
+        this.stop_loss = 3;
 
         this.binapi = binance();
         this.binapi.options({
@@ -222,7 +222,6 @@ class BinBot{
                 console.log(error.body);
                 return;
             };
-            console.log(response);
             if( process.env.BOT_NAME == 'ENLA'){
                 const msg = `-----------------------\n`
                 // + `Name: Binance Bot\n`
@@ -252,11 +251,10 @@ class BinBot{
                     console.log(error.body);
                     return;
                 }
-                console.log(response);
                 if( process.env.BOT_NAME == 'ENLA'){
                     let profitPercent = (this.symbolPrices[symbol]-this.priceAverage[symbol])/this.priceAverage[symbol];
                     const msg = `-----------------------\n`
-                    // + `Name: Binance Bot\n`
+                    + `Exchange: Binance\n`
                     + `Pair: ${symbol}\n`
                     + `Side: SELL \n`
                     + `Time: ${moment
