@@ -44,12 +44,13 @@ const getOrder = function getOrder(apiKey, symbol, startTime, endTime, limit) {
     let query = knex
         .select('*')
         .from('orders')
+        .where('apiKey', apiKey)
         .orderBy('transactTime', 'desc');
     if(limit){
         query = query.limit(limit);
     }
     if(symbol){
-        query = query.where('symbol', 'like', `%${symbol}%`);
+        query = query.andWhere('symbol', 'like', `%${symbol}%`);
     }
     if (startTime)
         query = query.andWhere('transactTime', '>', startTime);
@@ -58,9 +59,12 @@ const getOrder = function getOrder(apiKey, symbol, startTime, endTime, limit) {
     return query;
 }
 
-const deleteOrder = function deleteOrder(symbol) {
+const deleteOrder = function deleteOrder(apiKey, symbol) {
     let query = knex('orders')
-    .where('symbol', symbol)
+    .where({
+        symbol: symbol,
+        apiKey: apiKey
+    })
     .del();
     return query;
 }
