@@ -52,10 +52,12 @@ const getOrder = function getOrder(apiKey, symbol, startTime, endTime, limit) {
     if(symbol){
         query = query.andWhere('symbol', 'like', `%${symbol}%`);
     }
-    if (startTime)
+    if (startTime){
         query = query.andWhere('transactTime', '>', startTime);
-    if (endTime)
+    }
+    if (endTime){
         query = query.andWhere('transactTime', '<=', endTime);
+    }
     return query;
 }
 

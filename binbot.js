@@ -64,7 +64,7 @@ class BinBot{
 
     subscribe(){
 
-        this.updateOrders();
+        // this.updateOrders();
 
         /*Websocket communication*/
         this.binapi.websockets.userData(this.balance_update.bind(this), this.execution_update.bind(this), this.subscribe_endpoint.bind(this));
@@ -108,7 +108,7 @@ class BinBot{
                     this.currentStep[symbol] = 2;
                 }
             }
-            // console.log(`${symbol} Step: ${this.currentStep[symbol]}, tickerPercent: ${this.tickerPercent[symbol]}, currentPercent: ${this.currentPercent[symbol]}, current:${this.symbolPrices[symbol]}`);
+            console.log(`${symbol} Step: ${this.currentStep[symbol]}, tickerPercent: ${this.tickerPercent[symbol]}, currentPercent: ${this.currentPercent[symbol]}, current:${this.symbolPrices[symbol]}`);
             if(this.stopPrice[symbol]>0){
                 this.currentPercent[symbol] = this.symbolPrices[symbol]/this.stopPrice[symbol];
                 this.profitPercent[symbol] = this.symbolPrices[symbol]/this.priceAverage[symbol];
@@ -397,8 +397,8 @@ class BinBot{
             getOrder(process.env.API_KEY, pair,'','',profitSteps.length).then(function (orders){
                 let step = 0;
                 let stopPrice = 0;
-                let orderOrigQty= 0;
-                let cummulativeSum= 0;
+                let orderOrigQty = 0;
+                let cummulativeSum = 0;
                 let executedSum = 0;
                 let transactTime = '';
                 for(let order of orders){
