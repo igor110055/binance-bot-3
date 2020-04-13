@@ -108,7 +108,7 @@ class BinBot{
                     this.currentStep[symbol] = 2;
                 }
             }
-            console.log(`${symbol} Step: ${this.currentStep[symbol]}, tickerPercent: ${this.tickerPercent[symbol]}, currentPercent: ${this.currentPercent[symbol]}, current:${this.symbolPrices[symbol]}`);
+            // console.log(`${symbol} Step: ${this.currentStep[symbol]}, tickerPercent: ${this.tickerPercent[symbol]}, currentPercent: ${this.currentPercent[symbol]}, current:${this.symbolPrices[symbol]}`);
             if(this.stopPrice[symbol]>0){
                 this.currentPercent[symbol] = this.symbolPrices[symbol]/this.stopPrice[symbol];
                 this.profitPercent[symbol] = this.symbolPrices[symbol]/this.priceAverage[symbol];
