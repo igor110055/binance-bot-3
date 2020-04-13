@@ -108,7 +108,8 @@ class BinBot{
                     this.currentStep[symbol] = 2;
                 }
             }
-            // console.log(`${symbol} Step: ${this.currentStep[symbol]}, tickerPercent: ${this.tickerPercent[symbol]}, currentPercent: ${this.currentPercent[symbol]}, current:${this.symbolPrices[symbol]}`);
+            
+            console.log(`${symbol} Step: ${this.currentStep[symbol]}, tickerPercent: ${this.tickerPercent[symbol]}, currentPercent: ${this.currentPercent[symbol]}, current:${this.symbolPrices[symbol]}`);
             if(this.stopPrice[symbol]>0){
                 this.currentPercent[symbol] = this.symbolPrices[symbol]/this.stopPrice[symbol];
                 this.profitPercent[symbol] = this.symbolPrices[symbol]/this.priceAverage[symbol];
@@ -120,7 +121,7 @@ class BinBot{
                 }
             }
             // console.log(`${symbol} final Step: ${this.finalStep[symbol]} current: ${current} priceAverage: ${this.priceAverage[symbol]} profitPercent: ${this.profitPercent[symbol]} profitStep: ${this.profitStep[symbol]}`)
-            if(this.currentStep[symbol] == 0 && this.tickerPercent[symbol]<=1 && this.tickerPercent[symbol]>0.99 && this.tvsignal[symbol]){
+            if(this.currentStep[symbol] == 0 && this.tickerPercent[symbol]<=1 && this.tvsignal[symbol]){
                 // Do step 0
                 console.log(`${symbol}: Do step 0 BUY TickerPercent: ${this.tickerPercent[symbol]}`);
                 this.stopPrice[symbol] = this.symbolPrices[symbol];
