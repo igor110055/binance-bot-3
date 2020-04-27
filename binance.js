@@ -380,6 +380,8 @@ const dailyJob = new CronJob('0 0 23 * * *', function() {
   }
 }, null, true, 'Europe/Berlin');
 dailyJob.start();
+
+
 const monthlyJob = new CronJob('0 0 0 1 * *', function(totalUsdt) {
   let lastday_before = moment.utc(Date.now()).tz('Europe/Berlin').subtract(29,"days").format('YYYY-MM-DD HH:mm:ss');
   let lastday = moment.utc(Date.now()).tz('Europe/Berlin').subtract(30,"days").format('YYYY-MM-DD HH:mm:ss');

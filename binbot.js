@@ -229,6 +229,12 @@ class BinBot{
             this.binapi.marketSell(symbol, execQuantity, (error, response)=>{
                 if(error) {
                     console.log(error.body);
+                    let errCode = JSON.parse(error.body).code
+
+                    /**Min notional error, remove min notional buys */
+                    if(errCode === -1013){
+                        this.deleteLastBuys(symbol)
+                    }
                     return;
                 }
                 if( process.env.BOT_NAME == 'ENLA'){
@@ -253,12 +259,6 @@ class BinBot{
         }else{
             console.log(`Sell Order not permitted.`);
             console.log(`${symbol} ExecQuantity: ${execQuantity} FilterMinQty: ${filters[symbol].minQty}`);
-            /* remove order bad order history that cause error */
-            deleteOrder(process.env.API_KEY, symbol).then(res=>{
-                this.currentStep[symbol] = 0;
-                this.finalStep[symbol] = 0;
-                console.log(`${symbol} bad order history deleted`);
-            }).catch(err=>{console.log(err)});
         }
     }
 
@@ -390,6 +390,15 @@ class BinBot{
 
     subscribe_endpoint(data){
         this.subscribeEndpoint = data;
+    }
+
+    deleteLastBuys(pair){
+        getOrder(process.env.API_KEY, pair).then(orders=>{
+            for (let order of orders){
+                if (order.side === 'SELL') break;
+                deleteOrder(order).then(res=>{}).catch(err=>{})
+            }
+        })
     }
 
     lastStep(){

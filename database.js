@@ -61,14 +61,8 @@ const getOrder = function getOrder(apiKey, symbol, startTime, endTime, limit) {
     return query;
 }
 
-const deleteOrder = function deleteOrder(apiKey, symbol) {
-    let query = knex('orders')
-    .where({
-        symbol: symbol,
-        apiKey: apiKey
-    })
-    .del();
-    return query;
+const deleteOrder = function deleteOrder(keys) {
+    return knex('orders').where(keys).del();
 }
 
 const insertTotalusdt = function insertTotalusdt(total){
