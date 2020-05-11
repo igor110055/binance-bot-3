@@ -98,18 +98,11 @@ app.get('/get_balances', (req, res) => {
       });
 });
 
-app.get('/get_tvsignal', (req, res)=>{
-    let {pair} = req.body
+app.post('/long_tvsignal', (req, res)=>{
+    let {pair} = req.body;
+    bot.longSignal[pair] = true;
     res.json(apiResponse({
-        result: bot.tvsignal[pair]
-    }));
-})
-
-app.post('/set_tvsignal', (req, res)=>{
-    let {pair, signal} = req.body;
-    bot.tvsignal[pair] = signal;
-    res.json(apiResponse({
-        result: bot.tvsignal[pair]
+        result: "success"
     }));
 })
 
@@ -147,16 +140,6 @@ app.get('/get_order', (req, res)=>{
         console.log(error);
     })
 });
-
-app.post('/cancel_orders', (req, res)=>{
-    let {symbol} = req.body
-    bot.binapi.cancelOrders(symbol, (err, result, symbol)=>{
-        if(err) console.log(err.body);
-        res.json(apiResponse({
-            result: result
-        }));
-    })
-})
 
 /* Get trade history */
 app.get('/trade_history', (req, res) => {
@@ -256,23 +239,6 @@ app.post('/make_order', (req, res) => {
     }
 });
 
-app.get('/uptime', (req, res) => {
-    function format(seconds){
-        function pad(s){
-          return (s < 10 ? '0' : '') + s;
-        }
-        var hours = Math.floor(seconds / (60*60));
-        var minutes = Math.floor(seconds % (60*60) / 60);
-        var seconds = Math.floor(seconds % 60);
-      
-        return pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
-      }
-      var uptime = format(process.uptime());
-      res.json(apiResponse({
-        result: uptime
-    }));
-});
-
 app.post('/git_pull', (req, res) => {
     console.log('Push received');
     exec('./shell_scripts/gitpull.sh', function(error, stdout, stderr) {
@@ -285,34 +251,6 @@ app.post('/git_pull', (req, res) => {
         });
     });
 });
-
-app.post('/send_message', (req, res) => {
-    let {msg} = req.body;
-    sendMessage(msg);
-    res.json({
-        result: "Success"
-        });
-});
-
-app.post('/post_message', (req, res) => {
-    let {msg} = req.body;
-    postMessage(msg);
-    res.json({
-        result: "Success"
-        });
-});
-
-app.post('/server_restart', (req, res) => {
-    console.log('Server restarting..');
-    exec('./shell_scripts/restart.sh', function(error, stdout, stderr) {
-        res.json({
-            port: process.env.CONTROL_PORT,
-            error: error,
-            stdout: stdout,
-            stderr: stderr
-            });
-    });
-})
 
 app.post('/process_stop', (req, res) => {
     console.log('bot process stop');
@@ -329,22 +267,6 @@ app.post('/process_start', (req, res) => {
         result: "Success"
         });
 })
-
-app.post('/stop_buy', (req, res) => {
-    let {pair} = req.body;
-    bot.tvsignal[pair] = false;
-    res.json({
-        result: "Open No Trades"
-    })
-});
-
-app.post('/start_buy', (req, res) => {
-    let {pair} = req.body;
-    bot.tvsignal[pair] = true;
-    res.json({
-        result: "Open New Trades"
-    })
-});
 
 app.listen(port, () => console.log(`bot app listening on port ${port}!`));
 

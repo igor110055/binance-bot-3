@@ -1,5 +1,5 @@
 const moment = require('moment-timezone');
-const {truncateOrders, insertOrder, getOrder, deleteOrder, insertPnl} = require('./database');
+const {truncateOrders, insertOrder, getOrder, deleteOrder} = require('./database');
 const {postMessage} = require('./discord.js');
 const {sendMessage} = require('./telegram');
 require('dotenv').config();
@@ -29,16 +29,15 @@ class BinBot{
         this.profitPercent = {};
         this.getBalanceHandle = '';
         this.intervalHandle = '';
-        this.tvsignal = {};
-        this.tickerPercent = {};
-        this.prevDayavg = {};
         this.usePairs = defaultPairs;
         this.maxTrading = initialMaxTrading;
         this.ErrCode = '';
         this.subscribeEndpoint = '';
         this.tradingLog = [];
+        this.longSignal = {};
+        this.firstLoop = {};
 
-        this.stop_loss = 3;
+        this.stop_loss = 4;
 
         this.binapi = new Binance();
         this.binapi.options({
@@ -52,18 +51,16 @@ class BinBot{
         for(let pair of this.usePairs){
             this.statistics[pair] = {};
             this.usdtProfit[pair] = {};
-            this.tickerPercent[pair] = 0;
             this.currentStep[pair] = 0;
             this.stopPrice[pair] = 0;
-            this.prevDayavg[pair] = 0;
             this.profitStep[pair] = -1;
             this.lockProfitStep[pair] = -1;
-            this.tvsignal[pair] = false;
+            this.longSignal[pair] = false;
+            this.firstLoop[pair] = true;
         }
     }
 
     subscribe(){
-
         // this.updateOrders();
 
         /*Websocket communication*/
@@ -93,11 +90,9 @@ class BinBot{
         for(let symbol of this.usePairs){
             if (!prevDayTickers[symbol]) continue;
             this.symbolPrices[symbol] = prevDayTickers[symbol].bestBid;
-            this.prevDayavg[symbol] = prevDayTickers[symbol].averagePrice;
-            this.tickerPercent[symbol] = this.symbolPrices[symbol]/this.prevDayavg[symbol];
-
+            // console.log(`${symbol}: Final Step: ${this.finalStep[symbol]}`)
             /* Restore steps when server starts up */
-            if(this.finalStep[symbol] > 0){
+            if(this.finalStep[symbol] > 0 && this.firstLoop[symbol] === true){
                 let finalStep = this.finalStep[symbol];
                 if(finalStep == 1){
                     /* Sync step */
@@ -107,9 +102,10 @@ class BinBot{
                     this.currentPercent[symbol] = this.symbolPrices[symbol]/this.stopPrice[symbol];
                     this.currentStep[symbol] = 2;
                 }
+                this.firstLoop[symbol] = false;
             }
             
-            // console.log(`${symbol} Step: ${this.currentStep[symbol]}, tickerPercent: ${this.tickerPercent[symbol]}, currentPercent: ${this.currentPercent[symbol]}, current:${this.symbolPrices[symbol]}`);
+            // console.log(`${symbol} Step: ${this.currentStep[symbol]}, currentPercent: ${this.currentPercent[symbol]}, current:${this.symbolPrices[symbol]}`);
             if(this.stopPrice[symbol]>0){
                 this.currentPercent[symbol] = this.symbolPrices[symbol]/this.stopPrice[symbol];
                 this.profitPercent[symbol] = this.symbolPrices[symbol]/this.priceAverage[symbol];
@@ -119,34 +115,39 @@ class BinBot{
                         this.profitStep[symbol] = profitStep.step;
                     }
                 }
+                if(this.profitPercent[symbol] < (100+profitSteps[0].percent)/100){
+                    this.profitStep[symbol] = -1;
+                }
             }
-            // console.log(`${symbol} final Step: ${this.finalStep[symbol]} current: ${current} priceAverage: ${this.priceAverage[symbol]} profitPercent: ${this.profitPercent[symbol]} profitStep: ${this.profitStep[symbol]}`)
-            if(this.currentStep[symbol] == 0 && this.tickerPercent[symbol]<=1 && this.tvsignal[symbol]){
+
+            // console.log(`${symbol} currentPercent: ${this.currentPercent[symbol]} profitPercent: ${this.profitPercent[symbol]} currentStep: ${this.currentStep[symbol]} profitStep:${this.profitStep[symbol]}`)
+            
+            if(this.currentStep[symbol] == 0 && this.longSignal[symbol]){
                 // Do step 0
-                console.log(`${symbol}: Do step 0 BUY TickerPercent: ${this.tickerPercent[symbol]}`);
                 this.stopPrice[symbol] = this.symbolPrices[symbol];
-                this.entryTime[symbol] = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
+                // this.entryTime[symbol] = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
                 this.priceAverage[symbol] = this.symbolPrices[symbol];
-                this.market_Buy(symbol, this.symbolPrices[symbol], lossSteps[0].orderPercent);
                 this.currentStep[symbol] = 1;
-            }else if(this.currentStep[symbol]==1 && this.currentPercent[symbol]<=lossSteps[1].percent && this.currentPercent[symbol]>(100-this.stop_loss)/100 && this.tvsignal[symbol]){
+                this.market_Buy(symbol, this.symbolPrices[symbol], lossSteps[0].orderPercent);
+            }else if(this.currentStep[symbol]==1 && this.currentPercent[symbol]<=lossSteps[1].percent && this.currentPercent[symbol]>(100-this.stop_loss)/100 ){
                 //Do step 1
+                console.log(`${symbol}: Current Step ${this.currentStep[symbol]}`)
                 console.log(`${symbol}: Do step 1 BUY CurrentPercent ${this.currentPercent[symbol]}`);
                 /* Calculate the priceAverage to calculate the takeprofitPrice */
-                let perUsdtQuantity = parseFloat(this.totalUsdtd)/parseInt(this.usePairs.length)*lossSteps[1].orderPercent;
+                if(this.totalUsdtd >= this.maxTrading){
+                   var perUsdtQuantity = parseFloat(this.maxTrading)/parseInt(this.usePairs.length)*lossSteps[1].orderPercent;
+                }else{
+                   var perUsdtQuantity = parseFloat(this.totalUsdtd)/parseInt(this.usePairs.length)*lossSteps[1].orderPercent;
+                }
                 let stepSize = Math.abs(Math.log10(filters[symbol].stepSize));
                 let execQuantity = parseFloat(this.FixedToDown(perUsdtQuantity/this.symbolPrices[symbol], stepSize));
-                this.entryTime[symbol] = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
+                // this.entryTime[symbol] = moment.utc(Date.now()).tz('Europe/Berlin').format('YYYY-MM-DD HH:mm:ss');
                 this.priceAverage[symbol] = (this.cummulativeSum[symbol]+perUsdtQuantity)/(this.executedSum[symbol]+execQuantity);
-                this.market_Buy(symbol, this.symbolPrices[symbol], lossSteps[1].orderPercent);
                 this.currentStep[symbol] = 2;
-            }else if(this.currentStep[symbol]>0 && this.currentPercent[symbol]<=(100-this.stop_loss)/100){
+                this.market_Buy(symbol, this.symbolPrices[symbol], lossSteps[1].orderPercent);
+            }else if(this.currentStep[symbol]>0 && this.currentPercent[symbol]<=(100-this.stop_loss)/100 && this.currentPercent[symbol] > 0){
                 /* Do Market Sell */
                 console.log(`${symbol}: Stop loss SELL CurrentPercent: ${this.currentPercent[symbol]}`);
-                this.currentStep[symbol] = 0;
-                this.stopPrice[symbol] = 0;
-                this.currentPercent[symbol] = 0;
-                this.lockProfitStep[symbol] = -1;
                 this.market_Sell(symbol);
             }else if(this.currentStep[symbol]>0){
                 // console.log(`${symbol} ProfitStep:${this.profitStep[symbol]} lockProfitStep: ${this.lockProfitStep[symbol]}`);
@@ -155,18 +156,6 @@ class BinBot{
                 }else if(this.profitStep[symbol] < this.lockProfitStep[symbol] || this.profitStep[symbol] == (profitSteps.length-1)){
                     /* Market sell */
                     console.log(`${symbol}: Take profit SELL TakeProfitStep: ${this.lockProfitStep[symbol]}`);
-                    this.currentStep[symbol] = 0;
-                    this.stopPrice[symbol] = 0;
-                    this.currentPercent[symbol] = 0;
-                    this.lockProfitStep[symbol] = -1;
-                    this.market_Sell(symbol);
-                }else if(this.tvsignal[symbol] === false){
-                    /* Immediate Sell from Tradingview No Trades Signal */
-                    console.log(`${symbol}: No Trade Signal SELL CurrentPercent: ${this.currentPercent[symbol]}`);
-                    this.currentStep[symbol] = 0;
-                    this.stopPrice[symbol] = 0;
-                    this.currentPercent[symbol] = 0;
-                    this.lockProfitStep[symbol] = -1;
                     this.market_Sell(symbol);
                 }
             }
@@ -175,6 +164,15 @@ class BinBot{
         // this.getAllOrders();
         /* Update cummulativeSum and executedSum */
         this.lastStep();
+    }
+
+    setInitialValues(symbol){
+        this.currentStep[symbol] = 0;
+        this.currentPercent[symbol] = 0;
+        this.lockProfitStep[symbol] = -1;
+        this.profitStep[symbol] = -1;
+        this.stopPrice[symbol] = 0;
+        this.longSignal[symbol] = false;
     }
 
     market_Buy(symbol, symbolPrice, orderPercent){
@@ -237,6 +235,9 @@ class BinBot{
                     }
                     return;
                 }
+
+                this.setInitialValues(symbol);
+
                 if( process.env.BOT_NAME == 'ENLA'){
                     let profitPercent = (this.symbolPrices[symbol]-this.priceAverage[symbol])/this.priceAverage[symbol];
                     const msg = `-----------------------\n`

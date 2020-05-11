@@ -27,20 +27,21 @@ binance.websockets.prevDay(false, (error, obj) => {
 
 const lossSteps=[
     {step: 0, percent: 1, orderPercent:0.6},
-    {step: 1, percent: 0.97, orderPercent:0.4}
+    {step: 1, percent: 0.98, orderPercent:0.4}
 ];
 
 const profitSteps = [
-    {step:0, percent: 2},
-    {step:1, percent: 3},
-    {step:2, percent: 4},
-    {step:3, percent: 6},
-    {step:4, percent: 8},
-    {step:5, percent: 10}
+    {step:0, percent: 1},
+    {step:1, percent: 2},
+    {step:2, percent: 3},
+    {step:3, percent: 4},
+    {step:4, percent: 6},
+    {step:5, percent: 8},
+    {step:6, percent: 10}
 ];
 
 /** Max Trading Value when creating account, used for trial version */
-const initialMaxTrading = 250
+const initialMaxTrading = 520
 
 module.exports.prevDayTickers = prevDayTickers;
 module.exports.defaultPairs = defaultPairs;
