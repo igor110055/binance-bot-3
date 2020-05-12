@@ -202,7 +202,7 @@ class BinBot{
             };
             if( process.env.BOT_NAME == 'ENLA'){
                 const msg = `-----------------------\n`
-                // + `Name: Binance Bot\n`
+                + `Name: Binance Bot\n`
                 + `Pair: ${symbol}\n`
                 + `Side: BUY \n`
                 + `Time: ${moment
